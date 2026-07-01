@@ -45,7 +45,7 @@ export default function RoutePanel({
           <div className="route-panel__stat">
             <span className="route-panel__stat-icon">📍</span>
             <span className="route-panel__stat-value">
-              {routeResult.distanceText}
+              {routeResult.distanceText ?? "—"}
             </span>
             <span className="route-panel__stat-label">distance</span>
           </div>
@@ -55,58 +55,12 @@ export default function RoutePanel({
           <div className="route-panel__stat">
             <span className="route-panel__stat-icon">🚶</span>
             <span className="route-panel__stat-value">
-              {routeResult.durationText}
+              {routeResult.durationText ?? "—"}
             </span>
             <span className="route-panel__stat-label">walking</span>
           </div>
-
-          <div className="route-panel__divider" />
-
-          <div className="route-panel__stat">
-            <span className="route-panel__stat-icon">👥</span>
-            <span className="route-panel__stat-value">
-              {safeZone.capacity.toLocaleString()}
-            </span>
-            <span className="route-panel__stat-label">capacity</span>
-          </div>
         </div>
       )}
-
-      {/* no route found */}
-      {!isCalculating && routeResult && (
-        <div className="route-panel__details">
-            <div className="route-panel__stat">
-                <span className="route-panel__stat-icon">📍</span>
-                <span className="route-panel__stat-value">
-                    {routeResult.distanceText ?? "—"}
-                </span>
-                <span className="route-panel__stat-label">distance</span>
-            </div>
-
-            <div className="route-panel__divider" />
-
-            <div className="route-panel__stat">
-                <span className="route-panel__stat-icon">🚶</span>
-                <span className="route-panel__stat-value">
-                    {routeResult.durationText ?? "—"}
-                </span>
-                <span className="route-panel__stat-label">walking</span>
-            </div>
-
-            <div className="route-panel__divider" />
-
-            <div className="route-panel__stat">
-                <span className="route-panel__stat-icon">👥</span>
-                <span className="route-panel__stat-value">
-                    {/* safely handle missing capacity */}
-                    {safeZone.capacity != null
-                      ? safeZone.capacity.toLocaleString()
-                      : "N/A"}
-                </span>
-                <span className="route-panel__stat-label">capacity</span>
-            </div>
-        </div>
-        )}
 
       {/* source attribution */}
       {routeResult && !routeResult.fromCache && (

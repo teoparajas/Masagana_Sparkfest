@@ -242,18 +242,6 @@ export default function MapView({
                     🟢 {activePin.data.name}
                   </p>
                   <p className="map-view__iw-city">{activePin.data.city}</p>
-                  <p className="map-view__iw-detail">
-                    📍 {activePin.data.address}
-                  </p>
-                  <p className="map-view__iw-detail">
-                    👥 Capacity:{" "}
-                    {activePin.data.capacity.toLocaleString()}
-                  </p>
-                  {activePin.data.contact !== "N/A" && (
-                    <p className="map-view__iw-detail">
-                      📞 {activePin.data.contact}
-                    </p>
-                  )}
                   <button
                     className="map-view__iw-route-btn"
                     onClick={() => {

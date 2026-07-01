@@ -1,0 +1,74 @@
+[
+  {
+    "id": "fz-001",
+    "name": "Tumana Bridge, Marikina",
+    "city": "Marikina",
+    "lat": 14.6385,
+    "lng": 121.1029,
+    "baseRiskLevel": "moderate",
+    "source": "UP NOAH / news reports on Marikina River flooding"
+  },
+  {
+    "id": "fz-002",
+    "name": "Provident Village, Barangay Malanday, Marikina",
+    "city": "Marikina",
+    "lat": 14.6520,
+    "lng": 121.1010,
+    "baseRiskLevel": "high",
+    "source": "Widely reported as worst-hit subdivision during Typhoon Ondoy (2009) and Typhoon Ulysses (2020), both of which breached record Marikina River levels"
+  },
+  {
+    "id": "fz-003",
+    "name": "Barangka, Marikina (near Marcos Highway)",
+    "city": "Marikina",
+    "lat": 14.6280,
+    "lng": 121.0940,
+    "baseRiskLevel": "moderate",
+    "source": "Listed in Metro Manila flood control operation district records as a priority flood area"
+  },
+  {
+    "id": "fz-004",
+    "name": "Cubao Underpass (Aurora Blvd. - EDSA), Quezon City",
+    "city": "Quezon City",
+    "lat": 14.6190,
+    "lng": 121.0535,
+    "baseRiskLevel": "moderate",
+    "source": "MMDA flood-prone area list"
+  },
+  {
+    "id": "fz-005",
+    "name": "EDSA near Camp Aguinaldo, Quezon City",
+    "city": "Quezon City",
+    "lat": 14.6280,
+    "lng": 121.0555,
+    "baseRiskLevel": "moderate",
+    "source": "MMDA 2024 list of flood-prone areas ahead of rainy season"
+  },
+  {
+    "id": "fz-006",
+    "name": "Commonwealth Ave. corner Tandang Sora Ave., Quezon City",
+    "city": "Quezon City",
+    "lat": 14.6800,
+    "lng": 121.0850,
+    "baseRiskLevel": "moderate",
+    "source": "Metro Manila flood control operation district records"
+  },
+  {
+    "id": "fz-007",
+    "name": "España Blvd. near Blumentritt, Manila",
+    "city": "Manila",
+    "lat": 14.6085,
+    "lng": 120.9885,
+    "baseRiskLevel": "moderate",
+    "source": "Flood control operation district list; MMDA identifies Manila as having the highest number of flood-prone streets in NCR"
+  },
+  {
+    "id": "fz-008",
+    "name": "Quirino Ave. - Taft Ave. - Pedro Gil St., Manila",
+    "city": "Manila",
+    "lat": 14.5720,
+    "lng": 120.9930,
+    "baseRiskLevel": "high",
+    "source": "Recurring inadequate-drainage flood point cited across multiple MMDA/news flood-prone area lists"
+  }
+]

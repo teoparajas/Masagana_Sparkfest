@@ -1,28 +1,75 @@
-# Firebase build and deployment files
-/firebase-debug.log
-/firebase-debug.*.log
-.firebaserc
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
 
-# Firebase Hosting
-/firebase.json
-*.cache
-hosting/.cache
 
-# Firebase Functions
-/functions/node_modules/
-/functions/.env
-/functions/package-lock.json
+# Environment variables 
+# NEVER commit real API keys or secrets.
+# Commit only .env.example (the template with dummy values).
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Firebase Emulators
-/firebase-*.zip
-/.firebase/
-/emulator-ui/
 
-# Logs
+#  Build output 
+dist/
+build/
+.next/
+out/
+
+
+#  Logs 
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Environment files (local configs)
-/.env.*
+
+#  Firebase 
+firebase-debug.log
+firebase-debug.*.log
+.firebase/
+firebase-*.zip
+emulator-ui/
+
+# Firebase Functions env + dependencies (backend only, not committed)
+functions/node_modules/
+functions/.env
+functions/package-lock.json
+
+# Firebase Hosting cache (generated locally, not needed in repo)
+hosting/.cache
+
+
+# Service Worker / PWA 
+workbox-*.js
+sw.js
+workbox-config.js
+
+
+# Editor & OS files 
+.DS_Store
+Thumbs.db
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+
+# Testing & coverage 
+coverage/
+.nyc_output/
+.eslintcache
+
+
+# Misc 
+*.local
+.vercel
+.netlify

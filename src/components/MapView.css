@@ -145,6 +145,14 @@
   border: 1px solid rgba(0,0,0,0.2);
 }
 
+.map-view__dot--route {
+  background: #2B6FD1;
+  border-radius: 2px; 
+  width: 14px;
+  height: 4px;
+  margin-bottom: 2px;
+}
+
 .map-view__dot--user       { background: #2B6FD1; }
 .map-view__dot--flood-high { background: #B3352C; }
 .map-view__dot--flood-mod  { background: #C98A1F; }

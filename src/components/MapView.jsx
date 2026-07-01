@@ -3,15 +3,15 @@
 //   - User's current GPS location (blue)
 //   - Flood-prone zones (red = high, orange = moderate)
 //   - Safe zones / evacuation centers (green)
+//   - Walking route as a dashed blue Polyline
 // Clicking any pin opens an InfoWindow with details.
-// Passes user location and selected safe zone up to parent via props
-// so the routing task (2.4) can use them.
 
 import { useState, useCallback, useRef } from "react";
 import {
   GoogleMap,
   Marker,
   InfoWindow,
+  Polyline,
   useJsApiLoader,
 } from "@react-google-maps/api";
 
@@ -23,24 +23,30 @@ import {
   MAP_STYLE,
 } from "../services/mapsConfig";
 
-import { getMarkerIcon }   from "../utils/mapIcons";
+import { getMarkerIcon }    from "../utils/mapIcons";
 import { useOfflineStatus } from "../hooks/useOfflineStatus";
 import floodZones           from "../data/floodZones.json";
 import safeZones            from "../data/safeZones.json";
 import "./MapView.css";
 
-// ── Props ────────────────────────────────────────────────────────────────────
-// userLocation  : { lat, lng } | null  — passed down from App.jsx
+// ── Props ─────────────────────────────────────────────────────────────────────
+// userLocation     : { lat, lng } | null  — from App.jsx
+// routePoints      : Array<{ lat, lng }> | null — polyline path from routingService
 // onSafeZoneSelect : (safeZone) => void — called when user picks a safe zone
-//                                         (used in task 2.4 for routing)
+// onMapReady       : (directionsService) => void — passes DirectionsService up to App
 
-export default function MapView({ userLocation, onSafeZoneSelect }) {
+export default function MapView({
+  userLocation,
+  routePoints,
+  onSafeZoneSelect,
+  onMapReady,
+}) {
   const isOnline = useOfflineStatus();
 
-  // which pin's InfoWindow is open — stores the pin object or null
+  // which pin's InfoWindow is currently open
   const [activePin, setActivePin] = useState(null);
 
-  // keep a ref to the map instance for programmatic control later
+  // ref to the map instance for programmatic control
   const mapRef = useRef(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
@@ -48,12 +54,19 @@ export default function MapView({ userLocation, onSafeZoneSelect }) {
     libraries:        MAPS_LIBRARIES,
   });
 
-  // store map instance on load
+  // store map instance + initialize DirectionsService on load
   const onMapLoad = useCallback((map) => {
     mapRef.current = map;
-  }, []);
 
-  // center map on user when their location becomes available
+    // instantiate DirectionsService here — the Maps JS API is guaranteed
+    // to be loaded at this point, so window.google.maps is safe to access
+    if (window.google && onMapReady) {
+      const directionsService = new window.google.maps.DirectionsService();
+      onMapReady(directionsService);
+    }
+  }, [onMapReady]);
+
+  // pan to user location once map is idle and userLocation is available
   const onMapIdle = useCallback(() => {
     if (userLocation && mapRef.current) {
       mapRef.current.panTo(userLocation);
@@ -104,14 +117,14 @@ export default function MapView({ userLocation, onSafeZoneSelect }) {
         onLoad={onMapLoad}
         onIdle={onMapIdle}
         options={{
-          styles:           MAP_STYLE,
-          disableDefaultUI: false,
-          zoomControl:      true,
-          mapTypeControl:   false,   // keep UI clean
+          styles:            MAP_STYLE,
+          disableDefaultUI:  false,
+          zoomControl:       true,
+          mapTypeControl:    false,
           streetViewControl: false,
           fullscreenControl: true,
         }}
-        onClick={closeInfoWindow}   // close any open InfoWindow on map click
+        onClick={closeInfoWindow}
       >
 
         {/* ── User location pin (blue) ── */}
@@ -120,7 +133,7 @@ export default function MapView({ userLocation, onSafeZoneSelect }) {
             position={userLocation}
             icon={getMarkerIcon("user")}
             title="Your location"
-            zIndex={100}            // always on top
+            zIndex={100}
             onClick={() =>
               setActivePin({ type: "user", data: userLocation })
             }
@@ -153,6 +166,33 @@ export default function MapView({ userLocation, onSafeZoneSelect }) {
           />
         ))}
 
+        {/* ── Route Polyline ── */}
+        {routePoints && routePoints.length > 0 && (
+          <Polyline
+            path={routePoints}
+            options={{
+              strokeColor:   "#2B6FD1",
+              strokeOpacity: 0,        // set to 0 so the icon dash pattern shows cleanly
+              strokeWeight:  5,
+              geodesic:      true,
+              icons: [
+                {
+                  // dashed line effect using a repeated short stroke symbol
+                  icon: {
+                    path:           "M 0,-1 0,1",
+                    strokeOpacity:  1,
+                    strokeColor:    "#2B6FD1",
+                    strokeWeight:   5,
+                    scale:          4,
+                  },
+                  offset: "0",
+                  repeat: "18px",
+                },
+              ],
+            }}
+          />
+        )}
+
         {/* ── InfoWindow — renders for whichever pin is active ── */}
         {activePin && (
           <InfoWindow
@@ -164,15 +204,19 @@ export default function MapView({ userLocation, onSafeZoneSelect }) {
             onCloseClick={closeInfoWindow}
           >
             <div className="map-view__infowindow">
+
+              {/* user pin InfoWindow */}
               {activePin.type === "user" && (
                 <>
                   <p className="map-view__iw-title">📍 Your Location</p>
                   <p className="map-view__iw-detail">
-                    {activePin.data.lat.toFixed(4)}, {activePin.data.lng.toFixed(4)}
+                    {activePin.data.lat.toFixed(4)},{" "}
+                    {activePin.data.lng.toFixed(4)}
                   </p>
                 </>
               )}
 
+              {/* flood zone InfoWindow */}
               {activePin.type === "flood" && (
                 <>
                   <p className="map-view__iw-title">
@@ -180,22 +224,30 @@ export default function MapView({ userLocation, onSafeZoneSelect }) {
                     {activePin.data.name}
                   </p>
                   <p className="map-view__iw-city">{activePin.data.city}</p>
-                  <p className="map-view__iw-detail">{activePin.data.description}</p>
-                  <span className={`map-view__iw-badge map-view__iw-badge--${activePin.data.baseRiskLevel}`}>
+                  <p className="map-view__iw-detail">
+                    {activePin.data.description}
+                  </p>
+                  <span
+                    className={`map-view__iw-badge map-view__iw-badge--${activePin.data.baseRiskLevel}`}
+                  >
                     {activePin.data.baseRiskLevel.toUpperCase()} RISK ZONE
                   </span>
                 </>
               )}
 
+              {/* safe zone InfoWindow */}
               {activePin.type === "safe" && (
                 <>
-                  <p className="map-view__iw-title">🟢 {activePin.data.name}</p>
+                  <p className="map-view__iw-title">
+                    🟢 {activePin.data.name}
+                  </p>
                   <p className="map-view__iw-city">{activePin.data.city}</p>
                   <p className="map-view__iw-detail">
                     📍 {activePin.data.address}
                   </p>
                   <p className="map-view__iw-detail">
-                    👥 Capacity: {activePin.data.capacity.toLocaleString()}
+                    👥 Capacity:{" "}
+                    {activePin.data.capacity.toLocaleString()}
                   </p>
                   {activePin.data.contact !== "N/A" && (
                     <p className="map-view__iw-detail">
@@ -213,6 +265,7 @@ export default function MapView({ userLocation, onSafeZoneSelect }) {
                   </button>
                 </>
               )}
+
             </div>
           </InfoWindow>
         )}
@@ -233,7 +286,14 @@ export default function MapView({ userLocation, onSafeZoneSelect }) {
         <span className="map-view__legend-item">
           <i className="map-view__dot map-view__dot--safe" /> Safe zone
         </span>
+        {/* only show route legend item when a route is active */}
+        {routePoints && routePoints.length > 0 && (
+          <span className="map-view__legend-item">
+            <i className="map-view__dot map-view__dot--route" /> Route
+          </span>
+        )}
       </div>
+
     </div>
   );
 }

@@ -94,3 +94,20 @@ body {
   padding: 14px;
   overflow-y: auto;
 }
+
+.app__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: 60;
+}
+
+.app__overlay-panel {
+  width: min(640px, 100%);
+  max-height: min(90vh, 860px);
+  overflow: auto;
+  border-radius: 28px;
+}

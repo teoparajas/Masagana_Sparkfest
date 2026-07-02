@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.8",
+    "dexie": "^4.4.4",
     "firebase": "^12.15.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"

@@ -38,6 +38,8 @@ import "./MapView.css";
 export default function MapView({
   userLocation,
   routePoints,
+  isRouteFromCache,
+  routeCachedAt,
   onSafeZoneSelect,
   onMapReady,
 }) {
@@ -107,6 +109,13 @@ export default function MapView({
       {!isOnline && (
         <div className="map-view__offline-bar">
           📵 Offline — map tiles may be limited to cached areas
+        </div>
+      )}
+
+      {isRouteFromCache && routePoints && routePoints.length > 0 && (
+        <div className="map-view__stale-route-bar">
+          🕐 Showing last known route
+          {routeCachedAt && ` (as of ${formatCachedTime(routeCachedAt)})`}
         </div>
       )}
 
@@ -284,4 +293,13 @@ export default function MapView({
 
     </div>
   );
+}
+
+// helper
+function formatCachedTime(timestamp) {
+  const mins = Math.round((Date.now() - timestamp) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  return `${hrs} hr${hrs > 1 ? "s" : ""} ago`;
 }

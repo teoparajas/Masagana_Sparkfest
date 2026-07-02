@@ -175,6 +175,8 @@ export default function App() {
             <MapView
               userLocation={userLocation}
               routePoints={routeResult?.points ?? null}
+              isRouteFromCache={routeResult?.fromCache ?? false}
+              routeCachedAt={routeResult?.cachedAt ?? null}
               onSafeZoneSelect={setSelectedSafeZone}
               onMapReady={handleMapReady}
             />

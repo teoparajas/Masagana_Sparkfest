@@ -14,7 +14,10 @@
 
 # 📖 Overview
 
-	BAHA NA! is an offline‑first Progressive Web App that delivers flood risk levels, walking evacuation routes, and community‑verified hazard reports to Metro Manila residents even after mobile signal and internet drop. Every safety‑critical output (risk banner, route, safe‑zone list) is cached locally before connectivity fails. User‑generated reports queue offline and sync automatically on reconnection. This is a functional prototype—real map, real routing, real backend—built to prove the offline‑first approach is a credible, doable differentiator with a clear path to production.
+BAHA NA! is an offline‑first Progressive Web App that delivers flood risk levels, walking evacuation routes, and community‑verified hazard reports to Metro Manila residents even after
+mobile signal and internet drop. Every safety‑critical output (risk banner, route, safe‑zone list) is cached locally before connectivity fails. User‑generated reports queue offline and 
+sync automatically on reconnection. This is a functional prototype—real map, real routing, real backend—built to prove the offline‑first approach is a credible, doable differentiator 
+with a clear path to production.
 
 ---
 

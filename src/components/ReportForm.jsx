@@ -92,7 +92,13 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
 
     // ── Offline path ──────────────────────────────────────────────────────────
     if (!isOnline) {
-      addToQueue(reportData);
+      const queuedId = await addToQueue(reportData);
+      if (!queuedId) {
+        setStatus(STATUS.ERROR);
+        setErrorMsg("Unable to save report locally. Please try again.");
+        return;
+      }
+
       setStatus(STATUS.QUEUED);
       resetFormFields();
       if (onReportSubmitted) onReportSubmitted({ ...reportData, status: "pending" });
@@ -124,7 +130,12 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
       console.error("Report submission failed:", err);
 
       // online submit failed — save to queue as fallback
-      addToQueue(reportData);
+      const queuedId = await addToQueue(reportData);
+      if (!queuedId) {
+        setStatus(STATUS.ERROR);
+        setErrorMsg("Unable to save report locally. Please try again.");
+        return;
+      }
       setStatus(STATUS.QUEUED);
       resetFormFields();
       if (onReportSubmitted) onReportSubmitted({ ...reportData, status: "pending" });
@@ -149,7 +160,7 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
         />
 
       <div className="report-form__header">
-        <h3 className="report-form__title">🚨 Submit a Hazard Report</h3>
+        <h3 className="report-form__title"> Submit a Hazard Report</h3>
         <p className="report-form__subtitle">
           Reports near the same area are automatically verified once 3 or more
           are received.
@@ -159,7 +170,6 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
       {/* success feedback */}
       {status === STATUS.SUCCESS && (
         <div className="report-form__feedback report-form__feedback--success">
-          ✅ Report submitted — it appears in the Community Feed as{" "}
           <b>Pending</b>. Others nearby can verify it.
         </div>
       )}
@@ -167,7 +177,6 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
       {/* queued (offline) feedback */}
       {status === STATUS.QUEUED && (
         <div className="report-form__feedback report-form__feedback--queued">
-          💾 Saved locally — will send automatically when you're back online.
         </div>
       )}
 
@@ -198,7 +207,6 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
                 )
               }
             >
-              📍 Use my GPS coordinates
             </button>
           )}
         </div>
@@ -251,13 +259,12 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
             </span>
           </label>
           <div className="report-form__photo-placeholder">
-            📷 Photo upload — future feature
           </div>
         </div>
 
         {/* Validation error */}
         {errorMsg && (
-          <div className="report-form__error">⚠️ {errorMsg}</div>
+          <div className="report-form__error"> {errorMsg}</div>
         )}
 
         {/* Submit button */}

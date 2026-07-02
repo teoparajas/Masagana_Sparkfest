@@ -4,6 +4,7 @@
 // and a warning if showing a cached route while offline.
 
 import "./RoutePanel.css";
+import OfflineBanner from "./OfflineBanner";
 
 export default function RoutePanel({
   safeZone,       // the selected safe zone object

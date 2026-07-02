@@ -6,6 +6,7 @@
 //   - Walking route as a dashed blue Polyline
 // Clicking any pin opens an InfoWindow with details.
 
+import OfflineBanner from "./OfflineBanner";
 import { useState, useCallback, useRef } from "react";
 import {
   GoogleMap,
@@ -104,11 +105,12 @@ export default function MapView({
     <div className="map-view">
 
       {/* offline notice bar */}
-      {!isOnline && (
-        <div className="map-view__offline-bar">
-          📵 Offline — map tiles may be limited to cached areas
-        </div>
-      )}
+      <OfflineBanner
+        isOnline={isOnline}
+        lastSyncedAt={null}
+        message="Offline — map tiles limited to previously viewed areas"
+        compact
+      />
 
       <GoogleMap
         mapContainerClassName="map-view__container"

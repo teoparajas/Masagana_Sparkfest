@@ -8,6 +8,7 @@ import { submitReport, runValidationCheck } from "../services/firestoreService";
 import { addToQueue }                       from "../services/reportQueueService";
 import { useOfflineStatus }                 from "../hooks/useOfflineStatus";
 import "./ReportForm.css";
+import OfflineBanner from "./OfflineBanner";
 
 const REPORT_TYPES = [
   "Rising floodwater",
@@ -141,12 +142,11 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
     <div className="report-form">
 
       {/* offline warning banner */}
-      {!isOnline && (
-        <div className="report-form__offline-banner">
-          📵 You're offline — your report will be saved locally and sent
-          automatically when you reconnect.
-        </div>
-      )}
+        <OfflineBanner
+        isOnline={isOnline}
+        lastSyncedAt={null}
+        message="Offline — your report will be saved locally and sent when you reconnect"
+        />
 
       <div className="report-form__header">
         <h3 className="report-form__title">🚨 Submit a Hazard Report</h3>

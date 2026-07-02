@@ -3,6 +3,7 @@
 // Subscribes to Firestore via onSnapshot — updates live without refresh.
 // Merges locally queued offline reports (from IndexedDB) into the feed.
 
+import OfflineBanner from "./OfflineBanner";
 import { useEffect, useState } from "react";
 import {
   subscribeToReports,
@@ -88,11 +89,12 @@ export default function FeedList() {
   return (
     <div className="feed">
 
-      {!isOnline && (
-        <div className="feed__offline-bar">
-          📵 Offline — showing last loaded reports. New reports save locally.
-        </div>
-      )}
+        <OfflineBanner
+        isOnline={isOnline}
+        lastSyncedAt={null}
+        message="Offline — showing last loaded reports. New reports save locally."
+        compact
+        />
 
       <div className="feed__header">
         <h3 className="feed__title">📋 Community Reports</h3>

@@ -1,9 +1,4 @@
 // src/components/RiskBanner.jsx
-// Fetches live weather for the user's location, calculates flood risk,
-// and renders a color-coded alert banner.
-// Falls back to IndexedDB cached data when offline.
-// userLocation is passed down from App.jsx — no GPS call here.
-
 import { useEffect, useState } from "react";
 import { fetchCurrentWeather }          from "../services/weatherService";
 import { calculateRisk, isInFloodZone } from "../services/riskEngine";
@@ -13,92 +8,88 @@ import {
   loadMostRecentWeatherCache,
   formatCacheAge,
 } from "../services/cacheService";
-import { useOfflineStatus } from "../hooks/useOfflineStatus";
+import { useOfflineStatus }  from "../hooks/useOfflineStatus";
+import { useLastSynced }     from "../hooks/useLastSynced";
+import OfflineBanner         from "./OfflineBanner";
 import floodZones from "../data/floodZones.json";
 import "./RiskBanner.css";
 
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 export default function RiskBanner({ userLocation }) {
-  const isOnline = useOfflineStatus();
+  const isOnline                   = useOfflineStatus();
+  const { lastSyncedAt, markSynced } = useLastSynced();
 
-  const [risk,     setRisk]     = useState(null);
-  const [weather,  setWeather]  = useState(null);
-  const [cacheAge, setCacheAge] = useState(null);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState(null);
+  const [risk,    setRisk]    = useState(null);
+  const [weather, setWeather] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState(null);
+
+  const fetchAndUpdate = async () => {
+    if (!userLocation) return;
+
+    // ── Offline path ──────────────────────────────────────────────────────
+    if (!isOnline) {
+      const cached = await loadWeatherCache(userLocation.lat, userLocation.lng)
+        ?? await loadMostRecentWeatherCache();
+
+      if (cached) {
+        setWeather(cached.weather);
+        setRisk(cached.risk);
+      } else {
+        setError(
+          "No cached data available. Connect to the internet for your first load."
+        );
+      }
+      setLoading(false);
+      return;
+    }
+
+    // ── Online path ───────────────────────────────────────────────────────
+    setLoading(true);
+    setError(null);
+
+    const weatherData = await fetchCurrentWeather(
+      userLocation.lat,
+      userLocation.lng
+    );
+
+    if (!weatherData) {
+      const cached = await loadWeatherCache(userLocation.lat, userLocation.lng)
+        ?? await loadMostRecentWeatherCache();
+      if (cached) {
+        setWeather(cached.weather);
+        setRisk(cached.risk);
+      } else {
+        setError("Unable to fetch weather data. Check your connection.");
+      }
+      setLoading(false);
+      return;
+    }
+
+    const inFloodZone = isInFloodZone(
+      userLocation.lat,
+      userLocation.lng,
+      floodZones
+    );
+
+    const riskData = calculateRisk(
+      weatherData.rainfallMm,
+      inFloodZone,
+      weatherData.weatherCode,
+      weatherData.rainfallNext3h
+    );
+
+    await saveWeatherCache(weatherData, riskData);
+    await markSynced(); // record successful sync timestamp
+
+    setWeather(weatherData);
+    setRisk(riskData);
+    setLoading(false);
+  };
 
   useEffect(() => {
     if (!userLocation) return;
-
-    const fetchAndUpdate = async () => {
-      // ── Offline path ────────────────────────────────────────────────────────
-      if (!isOnline) {
-        // try exact location cache first, fall back to most recent
-        const cached = await loadWeatherCache(userLocation.lat, userLocation.lng)
-          ?? await loadMostRecentWeatherCache();
-
-        if (cached) {
-          setWeather(cached.weather);
-          setRisk(cached.risk);
-          setCacheAge(formatCacheAge(cached.fetchedAt));
-        } else {
-          setError(
-            "No cached data available. Connect to the internet for your first load."
-          );
-        }
-        setLoading(false);
-        return;
-      }
-
-      // ── Online path ──────────────────────────────────────────────────────────
-      setLoading(true);
-      setError(null);
-
-      const weatherData = await fetchCurrentWeather(
-        userLocation.lat,
-        userLocation.lng
-      );
-
-      if (!weatherData) {
-        // fetch failed even though navigator.onLine said true —
-        // intermittent connection, fall back to IndexedDB cache
-        const cached = await loadWeatherCache(userLocation.lat, userLocation.lng)
-          ?? await loadMostRecentWeatherCache();
-
-        if (cached) {
-          setWeather(cached.weather);
-          setRisk(cached.risk);
-          setCacheAge(formatCacheAge(cached.fetchedAt));
-        } else {
-          setError("Unable to fetch weather data. Check your connection.");
-        }
-        setLoading(false);
-        return;
-      }
-
-      // calculate risk from fresh live data
-      const inFloodZone = isInFloodZone(
-        userLocation.lat,
-        userLocation.lng,
-        floodZones
-      );
-
-      const riskData = calculateRisk(
-        weatherData.rainfallMm,
-        inFloodZone,
-        weatherData.weatherCode,
-        weatherData.rainfallNext3h
-      );
-
-      // persist to IndexedDB cache for offline fallback
-      await saveWeatherCache(weatherData, riskData);
-
-      setWeather(weatherData);
-      setRisk(riskData);
-      setCacheAge(null);
-      setLoading(false);
-    };
 
     fetchAndUpdate();
 
@@ -109,7 +100,7 @@ export default function RiskBanner({ userLocation }) {
     return () => clearInterval(interval);
   }, [userLocation, isOnline]);
 
-  // ── Render: waiting for GPS ────────────────────────────────────────────────
+  // ── Render states ──────────────────────────────────────────────────────────
   if (!userLocation) {
     return (
       <div className="risk-banner risk-banner--loading">
@@ -119,7 +110,6 @@ export default function RiskBanner({ userLocation }) {
     );
   }
 
-  // ── Render: fetching weather ───────────────────────────────────────────────
   if (loading) {
     return (
       <div className="risk-banner risk-banner--loading">
@@ -129,30 +119,36 @@ export default function RiskBanner({ userLocation }) {
     );
   }
 
-  // ── Render: error ──────────────────────────────────────────────────────────
   if (error) {
     return (
-      <div className="risk-banner risk-banner--error">
-        <span className="risk-banner__icon">⚠️</span>
-        <span>{error}</span>
-      </div>
+      <>
+        <OfflineBanner
+          isOnline={isOnline}
+          lastSyncedAt={lastSyncedAt}
+          onRefresh={fetchAndUpdate}
+        />
+        <div className="risk-banner risk-banner--error">
+          <span className="risk-banner__icon">⚠️</span>
+          <span>{error}</span>
+        </div>
+      </>
     );
   }
 
   if (!risk) return null;
 
-  // ── Render: normal banner ──────────────────────────────────────────────────
   return (
     <div
       className={`risk-banner risk-banner--${risk.level}`}
       style={{ borderLeftColor: risk.color }}
     >
-      {/* offline indicator strip */}
-      {!isOnline && (
-        <div className="risk-banner__offline-strip">
-          📵 Offline — showing cached data · last updated {cacheAge}
-        </div>
-      )}
+      {/* shared offline banner replaces the old inline strip */}
+      <OfflineBanner
+        isOnline={isOnline}
+        lastSyncedAt={lastSyncedAt}
+        onRefresh={fetchAndUpdate}
+        compact
+      />
 
       <div className="risk-banner__content">
         <div className="risk-banner__left">

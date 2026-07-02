@@ -1,45 +1,91 @@
 // src/App.jsx
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import RiskBanner  from "./components/RiskBanner";
 import MapView     from "./components/MapView";
 import RoutePanel  from "./components/RoutePanel";
+import ReportForm  from "./components/ReportForm";
+import FeedList    from "./components/FeedList";
 import {
   getWalkingRoute,
   findNearestSafeZone,
   loadRouteCache,
 } from "./services/routingService";
+import {
+  flushQueue,
+  getQueueCount,
+  clearEntireQueue,
+} from "./services/reportQueueService";
 import { useOfflineStatus } from "./hooks/useOfflineStatus";
 import safeZones from "./data/safeZones.json";
 import "./App.css";
 
+const TABS = [
+  { id: "map",    label: "🗺 Map"    },
+  { id: "report", label: "🚨 Report" },
+  { id: "feed",   label: "📋 Feed"   },
+  { id: "dash",   label: "📊 Dash"   },
+];
+
 export default function App() {
   const isOnline = useOfflineStatus();
 
-  const [userLocation,       setUserLocation]       = useState(null);
-  const [selectedSafeZone,   setSelectedSafeZone]   = useState(null);
-  const [routeResult,        setRouteResult]        = useState(null);
-  const [isCalculating,      setIsCalculating]      = useState(false);
-  const [directionsService,  setDirectionsService]  = useState(null);
+  const [activeTab,         setActiveTab]         = useState("map");
+  const [userLocation,      setUserLocation]      = useState(null);
+  const [selectedSafeZone,  setSelectedSafeZone]  = useState(null);
+  const [routeResult,       setRouteResult]       = useState(null);
+  const [isCalculating,     setIsCalculating]     = useState(false);
+  const [directionsService, setDirectionsService] = useState(null);
+  const [queueCount,        setQueueCount]        = useState(0);
 
-  // ── GPS — single source for whole app ─────────────────────────────────────
+  // tracks previous online state so we only flush on offline → online transition
+  // null = first render, not yet initialized
+  const wasOnlineRef = useRef(null);
+
+  // ── GPS — single source for the whole app ─────────────────────────────────
   useEffect(() => {
     if (!navigator.geolocation) {
       setUserLocation({ lat: 14.5995, lng: 120.9842 });
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      ()    => setUserLocation({ lat: 14.5995, lng: 120.9842 }),
+      (pos) => setUserLocation({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+      }),
+      () => setUserLocation({ lat: 14.5995, lng: 120.9842 }),
       { timeout: 8000, maximumAge: 60000 }
     );
   }, []);
 
-  // ── Receive DirectionsService instance from MapView once map loads ─────────
+  // ── Offline queue flush — only triggers on offline → online transition ─────
+  useEffect(() => {
+    // first render: record initial state and update badge, don't flush
+    if (wasOnlineRef.current === null) {
+      wasOnlineRef.current = isOnline;
+      setQueueCount(getQueueCount());
+      return;
+    }
+
+    const justReconnected = !wasOnlineRef.current && isOnline;
+    wasOnlineRef.current  = isOnline;
+
+    if (justReconnected) {
+      console.log("🌐 Back online — flushing queue...");
+      flushQueue().then(() => {
+        setQueueCount(getQueueCount());
+      });
+    } else {
+      // just went offline or some other state change — just update badge
+      setQueueCount(getQueueCount());
+    }
+  }, [isOnline]);
+
+  // ── Map ready — receive DirectionsService instance from MapView ───────────
   const handleMapReady = useCallback((service) => {
     setDirectionsService(service);
   }, []);
 
-  // ── Calculate route whenever a safe zone is selected ──────────────────────
+  // ── Route calculation — runs when safe zone selection changes ─────────────
   useEffect(() => {
     if (!selectedSafeZone || !userLocation) return;
 
@@ -48,9 +94,7 @@ export default function App() {
       setRouteResult(null);
 
       if (!isOnline) {
-        // offline — load cached route immediately
-        const cached = loadRouteCache();
-        setRouteResult(cached);
+        setRouteResult(loadRouteCache());
         setIsCalculating(false);
         return;
       }
@@ -68,41 +112,110 @@ export default function App() {
     calculate();
   }, [selectedSafeZone, userLocation, isOnline, directionsService]);
 
-  // ── Auto-suggest nearest safe zone once we have user location ─────────────
-  // (suggests but doesn't force — user can override by tapping a different pin)
+  // ── Auto-suggest nearest safe zone once GPS resolves ─────────────────────
   useEffect(() => {
     if (!userLocation || selectedSafeZone) return;
     const nearest = findNearestSafeZone(userLocation, safeZones);
     if (nearest) setSelectedSafeZone(nearest);
   }, [userLocation]);
 
-  // ── Clear route ────────────────────────────────────────────────────────────
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleClearRoute = () => {
     setSelectedSafeZone(null);
     setRouteResult(null);
   };
 
+  const handleReportSubmitted = () => {
+    // update queue badge immediately
+    setQueueCount(getQueueCount());
+    // switch to feed immediately so user sees their report land
+    setActiveTab("feed");
+  };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div style={{ maxWidth: "480px", margin: "0 auto", padding: "16px" }}>
-      <h2 style={{ fontFamily: "Arial", color: "#1F3A5F", marginBottom: "12px" }}>
-        FloodWatch MM
-      </h2>
+    <div className="app">
 
-      <RiskBanner userLocation={userLocation} />
+      {/* app header */}
+      <header className="app__header">
+        <span className="app__title">FloodWatch MM</span>
 
-      <MapView
-        userLocation={userLocation}
-        routePoints={routeResult?.points ?? null}
-        onSafeZoneSelect={setSelectedSafeZone}
-        onMapReady={handleMapReady}
-      />
+        {!isOnline && (
+          <span className="app__offline-pill">● Offline</span>
+        )}
 
-      <RoutePanel
-        safeZone={selectedSafeZone}
-        routeResult={routeResult}
-        isCalculating={isCalculating}
-        onClear={handleClearRoute}
-      />
+        {queueCount > 0 && (
+          <span
+            className="app__queue-badge"
+            title={`${queueCount} report(s) waiting to sync`}
+          >
+            {queueCount} queued
+          </span>
+        )}
+      </header>
+
+      {/* tab navigation */}
+      <nav className="app__nav">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            className={`app__tab ${activeTab === tab.id ? "app__tab--active" : ""}`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+
+      {/* tab content */}
+      <main className="app__content">
+
+        {/* ── Map tab ── */}
+        {activeTab === "map" && (
+          <>
+            <RiskBanner userLocation={userLocation} />
+            <MapView
+              userLocation={userLocation}
+              routePoints={routeResult?.points ?? null}
+              onSafeZoneSelect={setSelectedSafeZone}
+              onMapReady={handleMapReady}
+            />
+            <RoutePanel
+              safeZone={selectedSafeZone}
+              routeResult={routeResult}
+              isCalculating={isCalculating}
+              onClear={handleClearRoute}
+            />
+          </>
+        )}
+
+        {/* ── Report tab ── */}
+        {activeTab === "report" && (
+          <ReportForm
+            userLocation={userLocation}
+            onReportSubmitted={handleReportSubmitted}
+          />
+        )}
+
+        {/* ── Feed tab ── */}
+        {activeTab === "feed" && (
+          <FeedList />
+        )}
+
+        {/* ── Dashboard tab — placeholder until task 3.4 ── */}
+        {activeTab === "dash" && (
+          <div style={{
+            padding:    "24px 16px",
+            textAlign:  "center",
+            color:      "#888",
+            fontFamily: "Arial",
+            fontSize:   "13px",
+          }}>
+            📊 Responder Dashboard — built in task 3.4
+          </div>
+        )}
+
+      </main>
     </div>
   );
 }

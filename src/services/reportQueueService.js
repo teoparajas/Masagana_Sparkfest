@@ -1,85 +1,108 @@
 // src/services/reportQueueService.js
-// Offline-first report queue.
-// When offline: saves reports to localStorage.
-// When back online: auto-flushes queued reports to Firestore.
-// Uses a flush lock to prevent concurrent sync attempts.
+// Offline report queue — upgraded from localStorage to IndexedDB (Dexie).
+// Reason: localStorage is not accessible from Service Workers (needed for Day 4).
+// All queue operations are now async — update all callers accordingly.
 
+import { db } from "./db";
 import { submitReport, runValidationCheck } from "./firestoreService";
 
-const QUEUE_KEY = "fw_report_queue";
-let isFlushing  = false; // module-level lock — prevents concurrent flush attempts
+let isFlushing = false;
 
 // ── Queue operations ──────────────────────────────────────────────────────────
 
-export function getQueue() {
+/**
+ * Get all queued reports.
+ * @returns {Promise<Array>}
+ */
+export async function getQueue() {
   try {
-    const raw = localStorage.getItem(QUEUE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
+    return await db.reportQueue.orderBy("queuedAt").toArray();
+  } catch (err) {
+    console.warn("getQueue failed:", err.message);
     return [];
   }
 }
 
-function saveQueue(queue) {
+/**
+ * Add a report to the offline queue.
+ * @param {object} reportData
+ * @returns {Promise<string>} the localId of the queued entry
+ */
+export async function addToQueue(reportData) {
+  const localId = `local_${Date.now()}_${Math.random().toString(36).slice(2)}`;
   try {
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
-  } catch (e) {
-    console.warn("Queue save failed:", e);
+    await db.reportQueue.put({
+      ...reportData,
+      localId,
+      queuedAt: Date.now(),
+    });
+    console.log("📥 Queued offline report:", localId);
+  } catch (err) {
+    console.warn("addToQueue failed:", err.message);
+  }
+  return localId;
+}
+
+/**
+ * Remove a single report from the queue by localId.
+ * @param {string} localId
+ */
+async function removeFromQueue(localId) {
+  try {
+    await db.reportQueue.delete(localId);
+    // verify removal
+    const stillExists = await db.reportQueue.get(localId);
+    if (stillExists) {
+      console.warn("⚠️ removeFromQueue failed for:", localId);
+    } else {
+      console.log("🗑 Removed from queue:", localId);
+    }
+  } catch (err) {
+    console.warn("removeFromQueue failed:", err.message);
   }
 }
 
-export function addToQueue(reportData) {
-  const queue = getQueue();
-  const entry = {
-    ...reportData,
-    queuedAt: Date.now(),
-    localId:  `local_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-  };
-  queue.push(entry);
-  saveQueue(queue);
-  console.log("📥 Queued offline report:", entry.localId);
-  return entry.localId;
-}
-
-function removeFromQueue(localId) {
-  const before = getQueue();
-  const after  = before.filter((r) => r.localId !== localId);
-  saveQueue(after);
-
-  // verify removal actually worked
-  const stillExists = getQueue().find((r) => r.localId === localId);
-  if (stillExists) {
-    console.warn("⚠️ removeFromQueue failed for:", localId);
-  } else {
-    console.log("🗑 Removed from queue:", localId);
+/**
+ * Get the number of reports currently in the queue.
+ * @returns {Promise<number>}
+ */
+export async function getQueueCount() {
+  try {
+    return await db.reportQueue.count();
+  } catch {
+    return 0;
   }
 }
 
-export function getQueueCount() {
-  return getQueue().length;
-}
-
-export function clearEntireQueue() {
-  localStorage.removeItem(QUEUE_KEY);
-  console.log("🧹 Queue cleared.");
+/**
+ * Clear the entire queue.
+ * Use only for testing/debugging.
+ */
+export async function clearEntireQueue() {
+  try {
+    await db.reportQueue.clear();
+    console.log("🧹 Queue cleared.");
+  } catch (err) {
+    console.warn("clearEntireQueue failed:", err.message);
+  }
 }
 
 // ── Flush queue to Firestore ──────────────────────────────────────────────────
 
 /**
- * Attempt to sync all queued offline reports to Firestore.
- * Only call this when the app is confirmed back online.
+ * Sync all queued offline reports to Firestore.
+ * Only call when confirmed back online.
  * Uses isFlushing lock to prevent concurrent runs.
- * Returns the number of reports successfully synced.
+ *
+ * @returns {Promise<number>} number of reports successfully synced
  */
 export async function flushQueue() {
-  // prevent concurrent flushes — only one at a time
   if (isFlushing) {
     console.log("⏳ Flush already in progress — skipping.");
     return 0;
   }
 
-  const queue = getQueue();
+  const queue = await getQueue();
   if (!queue.length) return 0;
 
   isFlushing = true;
@@ -89,12 +112,10 @@ export async function flushQueue() {
 
   for (const report of queue) {
     try {
-      // strip local-only fields before sending to Firestore
       const { localId, queuedAt, isQueued, ...reportData } = report;
 
       await submitReport(reportData);
 
-      // run validation check after each synced report
       if (reportData.lat && reportData.lng) {
         await runValidationCheck({
           lat: reportData.lat,
@@ -102,18 +123,17 @@ export async function flushQueue() {
         });
       }
 
-      // remove immediately after confirmed Firestore write
-      removeFromQueue(localId);
+      await removeFromQueue(localId);
       synced++;
       console.log(`✅ Synced and removed: ${localId}`);
 
     } catch (err) {
       console.warn("❌ Failed to sync queued report:", err.message);
-      // leave in queue — will retry on next flush
     }
   }
 
   isFlushing = false;
-  console.log(`✅ Flush complete: ${synced} synced, ${getQueueCount()} remaining.`);
+  const remaining = await getQueueCount();
+  console.log(`✅ Flush complete: ${synced} synced, ${remaining} remaining.`);
   return synced;
 }

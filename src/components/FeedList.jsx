@@ -1,32 +1,34 @@
 // src/components/FeedList.jsx
 // Real-time community hazard report feed.
 // Subscribes to Firestore via onSnapshot — updates live without refresh.
-// Shows Pending / Verified badges, report type, location, and relative time.
-// Handles offline state by showing last-seen reports from the snapshot cache.
+// Merges locally queued offline reports (from IndexedDB) into the feed.
 
 import { useEffect, useState } from "react";
-import { subscribeToReports, formatReportTime } from "../services/firestoreService";
-import { getQueue }                              from "../services/reportQueueService";
-import { useOfflineStatus }                      from "../hooks/useOfflineStatus";
+import {
+  subscribeToReports,
+  formatReportTime,
+} from "../services/firestoreService";
+import { getQueue }         from "../services/reportQueueService";
+import { useOfflineStatus } from "../hooks/useOfflineStatus";
 import "./FeedList.css";
 
-// icon per report type — purely visual, no logic
 const TYPE_ICONS = {
-  "Rising floodwater":      "🌊",
-  "Impassable road":        "🚧",
-  "Stranded residents":     "🆘",
-  "Power / utility hazard": "⚡",
+  "Rising floodwater":         "🌊",
+  "Impassable road":           "🚧",
+  "Stranded residents":        "🆘",
+  "Power / utility hazard":    "⚡",
   "Bridge / structure damage": "🌉",
-  "Other":                  "📌",
+  "Other":                     "📌",
 };
 
 export default function FeedList() {
   const isOnline = useOfflineStatus();
 
-  const [reports,   setReports]   = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState(null);
-  const [filter,    setFilter]    = useState("all"); // "all" | "verified" | "pending"
+  const [reports,       setReports]       = useState([]);
+  const [queuedReports, setQueuedReports] = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [error,         setError]         = useState(null);
+  const [filter,        setFilter]        = useState("all");
 
   // ── Subscribe to Firestore real-time feed ─────────────────────────────────
   useEffect(() => {
@@ -45,29 +47,33 @@ export default function FeedList() {
       }
     );
 
-    // cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
-  // ── Merge queued offline reports into the feed ────────────────────────────
-  // so users can see their own pending offline reports in the feed
-  // even before they sync to Firestore
-  const queuedReports = getQueue().map((r) => ({
-    id:          r.localId,
-    location:    r.location,
-    type:        r.type,
-    description: r.description,
-    lat:         r.lat,
-    lng:         r.lng,
-    status:      "pending",
-    createdAt:   new Date(r.queuedAt),
-    isQueued:    true, // flag to show "not yet synced" indicator
-  }));
+  // ── Load queued offline reports from IndexedDB ────────────────────────────
+  // runs once on mount — queued items update via the queue badge in App.jsx
+  useEffect(() => {
+    getQueue().then((queue) => {
+      setQueuedReports(
+        queue.map((r) => ({
+          id:          r.localId,
+          location:    r.location,
+          type:        r.type,
+          description: r.description,
+          lat:         r.lat,
+          lng:         r.lng,
+          status:      "pending",
+          createdAt:   new Date(r.queuedAt),
+          isQueued:    true,
+        }))
+      );
+    });
+  }, []);
 
-  // combine: queued first (most urgent), then live reports
+  // ── Combine queued + live reports ─────────────────────────────────────────
+  // queued reports appear first — they're the most recent from this device
   const allReports = [...queuedReports, ...reports];
 
-  // apply filter
   const filtered = allReports.filter((r) => {
     if (filter === "all")      return true;
     if (filter === "verified") return r.status === "verified";
@@ -75,7 +81,6 @@ export default function FeedList() {
     return true;
   });
 
-  // ── Counts for filter badges ───────────────────────────────────────────────
   const verifiedCount = allReports.filter((r) => r.status === "verified").length;
   const pendingCount  = allReports.filter((r) => r.status === "pending").length;
 
@@ -83,14 +88,12 @@ export default function FeedList() {
   return (
     <div className="feed">
 
-      {/* offline notice */}
       {!isOnline && (
         <div className="feed__offline-bar">
           📵 Offline — showing last loaded reports. New reports save locally.
         </div>
       )}
 
-      {/* header + stats */}
       <div className="feed__header">
         <h3 className="feed__title">📋 Community Reports</h3>
         <div className="feed__stats">
@@ -103,7 +106,6 @@ export default function FeedList() {
         </div>
       </div>
 
-      {/* filter tabs */}
       <div className="feed__filters">
         {[
           { key: "all",      label: `All (${allReports.length})`  },
@@ -112,7 +114,9 @@ export default function FeedList() {
         ].map((f) => (
           <button
             key={f.key}
-            className={`feed__filter-btn ${filter === f.key ? "feed__filter-btn--active" : ""}`}
+            className={`feed__filter-btn ${
+              filter === f.key ? "feed__filter-btn--active" : ""
+            }`}
             onClick={() => setFilter(f.key)}
           >
             {f.label}
@@ -120,7 +124,6 @@ export default function FeedList() {
         ))}
       </div>
 
-      {/* loading state */}
       {loading && (
         <div className="feed__loading">
           <div className="feed__spinner" />
@@ -128,12 +131,10 @@ export default function FeedList() {
         </div>
       )}
 
-      {/* error state */}
       {error && !loading && (
         <div className="feed__error">⚠️ {error}</div>
       )}
 
-      {/* empty state */}
       {!loading && !error && filtered.length === 0 && (
         <div className="feed__empty">
           {filter === "all"
@@ -142,7 +143,6 @@ export default function FeedList() {
         </div>
       )}
 
-      {/* report cards */}
       <div className="feed__list">
         {filtered.map((report) => (
           <ReportCard key={report.id} report={report} />
@@ -158,7 +158,7 @@ export default function FeedList() {
 function ReportCard({ report }) {
   const [expanded, setExpanded] = useState(false);
 
-  const icon = TYPE_ICONS[report.type] ?? "📌";
+  const icon    = TYPE_ICONS[report.type] ?? "📌";
   const timeStr = formatReportTime(report.createdAt);
 
   return (
@@ -169,7 +169,6 @@ function ReportCard({ report }) {
       tabIndex={0}
       onKeyDown={(e) => e.key === "Enter" && setExpanded((v) => !v)}
     >
-      {/* top row */}
       <div className="feed-card__top">
         <span className="feed-card__icon">{icon}</span>
 
@@ -179,7 +178,6 @@ function ReportCard({ report }) {
         </div>
 
         <div className="feed-card__right">
-          {/* status badge */}
           {report.isQueued ? (
             <span className="feed-card__badge feed-card__badge--queued">
               💾 Queued
@@ -197,7 +195,6 @@ function ReportCard({ report }) {
         </div>
       </div>
 
-      {/* expanded description */}
       {expanded && (
         <div className="feed-card__desc">
           {report.description}
@@ -209,7 +206,6 @@ function ReportCard({ report }) {
         </div>
       )}
 
-      {/* expand hint */}
       <div className="feed-card__expand-hint">
         {expanded ? "▲ less" : "▼ more"}
       </div>

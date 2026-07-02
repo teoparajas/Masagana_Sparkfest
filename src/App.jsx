@@ -13,7 +13,6 @@ import {
 import {
   flushQueue,
   getQueueCount,
-  clearEntireQueue,
 } from "./services/reportQueueService";
 import { useOfflineStatus } from "./hooks/useOfflineStatus";
 import safeZones from "./data/safeZones.json";
@@ -37,11 +36,10 @@ export default function App() {
   const [directionsService, setDirectionsService] = useState(null);
   const [queueCount,        setQueueCount]        = useState(0);
 
-  // tracks previous online state so we only flush on offline → online transition
   // null = first render, not yet initialized
   const wasOnlineRef = useRef(null);
 
-  // ── GPS — single source for the whole app ─────────────────────────────────
+  // ── GPS ────────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!navigator.geolocation) {
       setUserLocation({ lat: 14.5995, lng: 120.9842 });
@@ -57,12 +55,12 @@ export default function App() {
     );
   }, []);
 
-  // ── Offline queue flush — only triggers on offline → online transition ─────
+  // ── Offline queue flush — only on offline → online transition ─────────────
   useEffect(() => {
-    // first render: record initial state and update badge, don't flush
+    // first render: record state, update badge, don't flush
     if (wasOnlineRef.current === null) {
       wasOnlineRef.current = isOnline;
-      setQueueCount(getQueueCount());
+      getQueueCount().then(setQueueCount);
       return;
     }
 
@@ -72,20 +70,19 @@ export default function App() {
     if (justReconnected) {
       console.log("🌐 Back online — flushing queue...");
       flushQueue().then(() => {
-        setQueueCount(getQueueCount());
+        getQueueCount().then(setQueueCount);
       });
     } else {
-      // just went offline or some other state change — just update badge
-      setQueueCount(getQueueCount());
+      getQueueCount().then(setQueueCount);
     }
   }, [isOnline]);
 
-  // ── Map ready — receive DirectionsService instance from MapView ───────────
+  // ── Map ready ─────────────────────────────────────────────────────────────
   const handleMapReady = useCallback((service) => {
     setDirectionsService(service);
   }, []);
 
-  // ── Route calculation — runs when safe zone selection changes ─────────────
+  // ── Route calculation ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!selectedSafeZone || !userLocation) return;
 
@@ -94,7 +91,12 @@ export default function App() {
       setRouteResult(null);
 
       if (!isOnline) {
-        setRouteResult(loadRouteCache());
+        // pass coords so IndexedDB lookup is specific to this route
+        const cached = await loadRouteCache(
+          userLocation,
+          { lat: selectedSafeZone.lat, lng: selectedSafeZone.lng }
+        );
+        setRouteResult(cached);
         setIsCalculating(false);
         return;
       }
@@ -112,7 +114,7 @@ export default function App() {
     calculate();
   }, [selectedSafeZone, userLocation, isOnline, directionsService]);
 
-  // ── Auto-suggest nearest safe zone once GPS resolves ─────────────────────
+  // ── Auto-suggest nearest safe zone ────────────────────────────────────────
   useEffect(() => {
     if (!userLocation || selectedSafeZone) return;
     const nearest = findNearestSafeZone(userLocation, safeZones);
@@ -126,9 +128,7 @@ export default function App() {
   };
 
   const handleReportSubmitted = () => {
-    // update queue badge immediately
-    setQueueCount(getQueueCount());
-    // switch to feed immediately so user sees their report land
+    getQueueCount().then(setQueueCount);
     setActiveTab("feed");
   };
 
@@ -136,7 +136,6 @@ export default function App() {
   return (
     <div className="app">
 
-      {/* app header */}
       <header className="app__header">
         <span className="app__title">FloodWatch MM</span>
 
@@ -154,12 +153,13 @@ export default function App() {
         )}
       </header>
 
-      {/* tab navigation */}
       <nav className="app__nav">
         {TABS.map((tab) => (
           <button
             key={tab.id}
-            className={`app__tab ${activeTab === tab.id ? "app__tab--active" : ""}`}
+            className={`app__tab ${
+              activeTab === tab.id ? "app__tab--active" : ""
+            }`}
             onClick={() => setActiveTab(tab.id)}
           >
             {tab.label}
@@ -167,10 +167,8 @@ export default function App() {
         ))}
       </nav>
 
-      {/* tab content */}
       <main className="app__content">
 
-        {/* ── Map tab ── */}
         {activeTab === "map" && (
           <>
             <RiskBanner userLocation={userLocation} />
@@ -189,7 +187,6 @@ export default function App() {
           </>
         )}
 
-        {/* ── Report tab ── */}
         {activeTab === "report" && (
           <ReportForm
             userLocation={userLocation}
@@ -197,12 +194,11 @@ export default function App() {
           />
         )}
 
-        {/* ── Feed tab ── */}
         {activeTab === "feed" && (
           <FeedList />
         )}
 
-        {/* ── Dashboard tab — placeholder until task 3.4 ── */}
+        {/* placeholder until task 3.4 is merged from teammate */}
         {activeTab === "dash" && (
           <div style={{
             padding:    "24px 16px",
@@ -211,7 +207,7 @@ export default function App() {
             fontFamily: "Arial",
             fontSize:   "13px",
           }}>
-            📊 Responder Dashboard — built in task 3.4
+            📊 Responder Dashboard — in progress
           </div>
         )}
 

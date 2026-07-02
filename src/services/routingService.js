@@ -3,7 +3,7 @@
 //   1. Try Google Directions API (via Maps JS SDK — no extra REST call)
 //   2. If that fails or is blocked, fall back to public OSRM server
 //   3. Cache the last successful route to localStorage for offline display
-
+import { db, routeKey as buildRouteKey } from "./db";
 const ROUTE_CACHE_KEY = "fw_cached_route";
 
 // ── Main entry point ─────────────────────────────────────────────────────────
@@ -25,31 +25,26 @@ const ROUTE_CACHE_KEY = "fw_cached_route";
  *   source:       "google" | "osrm",    — which API succeeded
  * }
  */
+
+
 export async function getWalkingRoute(origin, destination, directionsService) {
-  // try Google first if the service instance is available
   if (directionsService) {
-    const googleResult = await tryGoogleDirections(
-      origin,
-      destination,
-      directionsService
-    );
+    const googleResult = await tryGoogleDirections(origin, destination, directionsService);
     if (googleResult) {
-      saveRouteCache(googleResult);
+      await saveRouteCache(googleResult, origin, destination); // pass coords
       return googleResult;
     }
   }
 
-  // Google failed or unavailable — try OSRM
   console.warn("Google Directions unavailable, trying OSRM fallback...");
   const osrmResult = await tryOSRM(origin, destination);
   if (osrmResult) {
-    saveRouteCache(osrmResult);
+    await saveRouteCache(osrmResult, origin, destination); // pass coords
     return osrmResult;
   }
 
-  // both failed — load from cache
   console.warn("Both routing sources failed, loading cached route.");
-  return loadRouteCache();
+  return loadRouteCache(origin, destination);
 }
 
 // ── Google Directions ─────────────────────────────────────────────────────────
@@ -130,29 +125,43 @@ async function tryOSRM(origin, destination) {
 
 // ── Cache helpers ─────────────────────────────────────────────────────────────
 
-function saveRouteCache(routeResult) {
+async function saveRouteCache(routeResult, origin, destination) {
   try {
-    // don't cache the raw DirectionsResult — it contains
-    // circular references that break JSON.stringify
-    const { raw, ...cacheable } = routeResult;
-    localStorage.setItem(ROUTE_CACHE_KEY, JSON.stringify(cacheable));
-  } catch (e) {
-    console.warn("Route cache write failed:", e);
+    const key = buildRouteKey(origin, destination);
+    const { raw, ...cacheable } = routeResult; // strip non-serializable fields
+    await db.routeCache.put({
+      routeKey: key,
+      ...cacheable,
+      cachedAt: Date.now(),
+    });
+  } catch (err) {
+    console.warn("saveRouteCache failed:", err.message);
   }
 }
 
-export function loadRouteCache() {
+export async function loadRouteCache(origin, destination) {
   try {
-    const cached = localStorage.getItem(ROUTE_CACHE_KEY);
-    if (!cached) return null;
-    return { ...JSON.parse(cached), fromCache: true };
-  } catch (e) {
+    if (origin && destination) {
+      // try to load the specific route first
+      const key      = buildRouteKey(origin, destination);
+      const specific = await db.routeCache.get(key);
+      if (specific) return { ...specific, fromCache: true };
+    }
+    // fallback — load most recent cached route regardless of endpoints
+    const latest = await db.routeCache.orderBy("cachedAt").last();
+    return latest ? { ...latest, fromCache: true } : null;
+  } catch (err) {
+    console.warn("loadRouteCache failed:", err.message);
     return null;
   }
 }
 
-export function clearRouteCache() {
-  localStorage.removeItem(ROUTE_CACHE_KEY);
+export async function clearRouteCache() {
+  try {
+    await db.routeCache.clear();
+  } catch (err) {
+    console.warn("clearRouteCache failed:", err.message);
+  }
 }
 
 // ── Nearest safe zone helper ──────────────────────────────────────────────────

@@ -23,7 +23,7 @@ const STATUS = {
   IDLE:    "idle",
   LOADING: "loading",
   SUCCESS: "success",
-  QUEUED:  "queued",
+  SAVED:   "saved",
   ERROR:   "error",
 };
 
@@ -99,7 +99,7 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
         return;
       }
 
-      setStatus(STATUS.QUEUED);
+      setStatus(STATUS.SAVED);
       resetFormFields();
       if (onReportSubmitted) onReportSubmitted({ ...reportData, status: "pending" });
       return;
@@ -136,7 +136,7 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
         setErrorMsg("Unable to save report locally. Please try again.");
         return;
       }
-      setStatus(STATUS.QUEUED);
+      setStatus(STATUS.SAVED);
       resetFormFields();
       if (onReportSubmitted) onReportSubmitted({ ...reportData, status: "pending" });
     }
@@ -170,13 +170,15 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
       {/* success feedback */}
       {status === STATUS.SUCCESS && (
         <div className="report-form__feedback report-form__feedback--success">
-          <b>Pending</b>. Others nearby can verify it.
+          ✅ Report submitted — it appears in the Community Feed as <b>Pending</b>.
+          Others nearby can verify it.
         </div>
       )}
 
-      {/* queued (offline) feedback */}
-      {status === STATUS.QUEUED && (
+      {/* saved offline feedback */}
+      {status === STATUS.SAVED && (
         <div className="report-form__feedback report-form__feedback--queued">
+          💾 Saved — will send when back online.
         </div>
       )}
 

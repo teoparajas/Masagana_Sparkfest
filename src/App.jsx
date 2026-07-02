@@ -61,10 +61,17 @@ export default function App() {
 
   // ── Offline queue flush — only on offline → online transition ─────────────
   useEffect(() => {
-    // first render: record state, update badge, don't flush
+    // first render: record state and refresh badge
     if (wasOnlineRef.current === null) {
       wasOnlineRef.current = isOnline;
       getQueueCount().then(setQueueCount);
+
+      if (isOnline) {
+        console.log("🌐 Online on startup — flushing queued reports...");
+        flushQueue().then(() => {
+          getQueueCount().then(setQueueCount);
+        });
+      }
       return;
     }
 
@@ -72,7 +79,7 @@ export default function App() {
     wasOnlineRef.current  = isOnline;
 
     if (justReconnected) {
-      console.log("🌐 Back online — flushing queue...");
+      console.log("🌐 Back online — flushing queued reports...");
       flushQueue().then(() => {
         getQueueCount().then(setQueueCount);
       });

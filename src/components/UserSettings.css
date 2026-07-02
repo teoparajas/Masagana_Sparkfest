@@ -4,6 +4,26 @@
   gap: 16px;
 }
 
+.user-settings__header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.user-settings__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.user-settings__subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.5;
+}
+
 .user-settings__topbar {
   display: flex;
   gap: 8px;
@@ -40,25 +60,30 @@
   border-radius: 18px;
 }
 
+.user-settings__panel--compact {
+  grid-template-columns: 130px 1fr;
+}
+
 .user-settings__avatar-card {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 180px;
+  min-height: 160px;
   background: #0f1b2c;
   border-radius: 18px;
 }
 
 .user-settings__avatar {
-  width: 120px;
-  height: 120px;
+  width: 110px;
+  height: 110px;
   display: grid;
   place-items: center;
   color: #fff;
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 18px;
-  font-size: 12px;
+  font-size: 18px;
+  font-weight: 700;
   letter-spacing: 1px;
 }
 
@@ -70,10 +95,10 @@
 
 .user-settings__detail-row {
   display: grid;
-  grid-template-columns: 130px 1fr;
+  grid-template-columns: 120px 1fr;
   align-items: center;
   gap: 12px;
-  padding: 16px;
+  padding: 14px 16px;
   border: 1px solid #e5e7eb;
   border-radius: 16px;
   background: #f9fbff;
@@ -92,13 +117,21 @@
   color: #111827;
 }
 
-.user-settings__logout {
+.user-settings__logout,
+.user-settings__login {
   margin-top: 8px;
   padding: 14px 18px;
   border: none;
   border-radius: 14px;
-  background: #1f3a5f;
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+}
+
+.user-settings__logout {
+  background: #1f3a5f;
+}
+
+.user-settings__login {
+  background: #2563eb;
 }

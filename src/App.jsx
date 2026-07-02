@@ -1,6 +1,7 @@
 // src/App.jsx
 import { useState, useEffect, useCallback, useRef } from "react";
 import RiskBanner  from "./components/RiskBanner";
+import Dashboard   from "./components/Dashboard";
 import MapView     from "./components/MapView";
 import RoutePanel  from "./components/RoutePanel";
 import ReportForm  from "./components/ReportForm";
@@ -212,17 +213,9 @@ export default function App() {
           <FeedList />
         )}
 
-        {/* ── Dashboard tab — placeholder until task 3.4 ── */}
+        {/* ── Dashboard tab — rain intensity + duration dashboard ── */}
         {activeTab === "dash" && (
-          <div style={{
-            padding:    "24px 16px",
-            textAlign:  "center",
-            color:      "#888",
-            fontFamily: "Arial",
-            fontSize:   "13px",
-          }}>
-            📊 Responder Dashboard — built in task 3.4
-          </div>
+          <Dashboard userLocation={userLocation} />
         )}
 
         {userSettingsOpen && (

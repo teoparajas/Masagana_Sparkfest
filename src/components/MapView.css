@@ -60,6 +60,15 @@
   font-family: Arial, sans-serif;
 }
 
+/* Stale Route Bar */
+.map-view__stale-route-bar {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 6px 12px;
+  font-size: 13px;
+  text-align: center;
+}
+
 /* ── InfoWindow content ── */
 .map-view__infowindow {
   font-family: Arial, sans-serif;

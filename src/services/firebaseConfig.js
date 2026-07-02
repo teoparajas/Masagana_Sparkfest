@@ -2,6 +2,7 @@
 // Firebase project configuration.
 // All sensitive values pulled from .env.local — never hardcoded here.
 // Share only .env.example with teammates, never .env.local
+console.log("API KEY:", import.meta.env.VITE_FIREBASE_API_KEY);
 
 import { initializeApp }  from "firebase/app";
 import { getFirestore }   from "firebase/firestore";

@@ -39,6 +39,8 @@ import "./MapView.css";
 export default function MapView({
   userLocation,
   routePoints,
+  isRouteFromCache,
+  routeCachedAt,
   onSafeZoneSelect,
   onMapReady,
 }) {
@@ -111,6 +113,13 @@ export default function MapView({
         message="Offline — map tiles limited to previously viewed areas"
         compact
       />
+
+      {isRouteFromCache && routePoints && routePoints.length > 0 && (
+        <div className="map-view__stale-route-bar">
+          🕐 Showing last known route
+          {routeCachedAt && ` (as of ${formatCachedTime(routeCachedAt)})`}
+        </div>
+      )}
 
       <GoogleMap
         mapContainerClassName="map-view__container"
@@ -286,4 +295,13 @@ export default function MapView({
 
     </div>
   );
+}
+
+// helper
+function formatCachedTime(timestamp) {
+  const mins = Math.round((Date.now() - timestamp) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  return `${hrs} hr${hrs > 1 ? "s" : ""} ago`;
 }

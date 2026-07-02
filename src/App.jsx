@@ -7,6 +7,7 @@ import RoutePanel  from "./components/RoutePanel";
 import ReportForm  from "./components/ReportForm";
 import FeedList    from "./components/FeedList";
 import UserSettings from "./components/UserSettings";
+import AuthPanel from "./components/AuthPanel";
 import {
   getWalkingRoute,
   findNearestSafeZone,
@@ -17,6 +18,8 @@ import {
   getQueueCount,
 } from "./services/reportQueueService";
 import { useOfflineStatus } from "./hooks/useOfflineStatus";
+import { auth } from "./services/firebaseConfig";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import safeZones from "./data/safeZones.json";
 import "./App.css";
 import "./components/UserSettings.css";
@@ -32,13 +35,20 @@ export default function App() {
   const isOnline = useOfflineStatus();
 
   const [activeTab,         setActiveTab]         = useState("map");
-  const [userLocation,      setUserLocation]      = useState(null);
+  const [userLocation,      setUserLocation]      = useState(() =>
+    navigator.geolocation
+      ? null
+      : { lat: 14.5995, lng: 120.9842 }
+  );
   const [selectedSafeZone,  setSelectedSafeZone]  = useState(null);
   const [routeResult,       setRouteResult]       = useState(null);
   const [isCalculating,     setIsCalculating]     = useState(false);
   const [directionsService, setDirectionsService] = useState(null);
   const [queueCount,        setQueueCount]        = useState(0);
   const [userSettingsOpen,  setUserSettingsOpen]  = useState(false);
+  const [authUser,          setAuthUser]          = useState(null);
+  const [authPanelOpen,     setAuthPanelOpen]     = useState(false);
+  const [authMode,          setAuthMode]          = useState("signin");
 
   // null = first render, not yet initialized
   const wasOnlineRef = useRef(null);
@@ -46,9 +56,9 @@ export default function App() {
   // ── GPS ────────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!navigator.geolocation) {
-      setUserLocation({ lat: 14.5995, lng: 120.9842 });
       return;
     }
+
     navigator.geolocation.getCurrentPosition(
       (pos) => setUserLocation({
         lat: pos.coords.latitude,
@@ -57,6 +67,18 @@ export default function App() {
       () => setUserLocation({ lat: 14.5995, lng: 120.9842 }),
       { timeout: 8000, maximumAge: 60000 }
     );
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setAuthUser(user ? {
+        uid: user.uid,
+        displayName: user.displayName || "",
+        email: user.email || "",
+      } : null);
+    });
+
+    return unsubscribe;
   }, []);
 
   // ── Offline queue flush — only on offline → online transition ─────────────
@@ -122,8 +144,14 @@ export default function App() {
   useEffect(() => {
     if (!userLocation || selectedSafeZone) return;
     const nearest = findNearestSafeZone(userLocation, safeZones);
-    if (nearest) setSelectedSafeZone(nearest);
-  }, [userLocation]);
+    if (!nearest) return;
+
+    const handle = requestAnimationFrame(() => {
+      setSelectedSafeZone(nearest);
+    });
+
+    return () => cancelAnimationFrame(handle);
+  }, [userLocation, selectedSafeZone]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleClearRoute = () => {
@@ -141,7 +169,14 @@ export default function App() {
     <div className="app">
 
       <header className="app__header">
-        <span className="app__title">FloodWatch MM</span>
+        <div>
+          <span className="app__title">FloodWatch MM</span>
+          <div className="app__subtitle">
+            {authUser
+              ? `Signed in as ${authUser.displayName || authUser.email}`
+              : "Guest mode — limited personalization, no saved profile data."}
+          </div>
+        </div>
 
         {!isOnline && (
           <span className="app__offline-pill">● Offline</span>
@@ -171,10 +206,23 @@ export default function App() {
         ))}
         <button
           className={`app__tab ${userSettingsOpen ? "app__tab--active" : ""}`}
-          onClick={() => setUserSettingsOpen((open) => !open)}
+          onClick={() => {
+            setUserSettingsOpen((open) => !open);
+            setAuthPanelOpen(false);
+          }}
           style={{ minWidth: 94 }}
         >
           ⚙ User
+        </button>
+        <button
+          className={`app__tab ${authPanelOpen ? "app__tab--active" : ""}`}
+          onClick={() => {
+            setAuthPanelOpen((open) => !open);
+            setUserSettingsOpen(false);
+          }}
+          style={{ minWidth: 94 }}
+        >
+          🔑 Login
         </button>
       </nav>
 
@@ -220,15 +268,35 @@ export default function App() {
           <div className="app__overlay" onClick={() => setUserSettingsOpen(false)}>
             <div className="app__overlay-panel" onClick={(event) => event.stopPropagation()}>
               <UserSettings
-                user={{
-                  name: "Alex Mercado",
-                  email: "alex.mercado@gmail.com",
-                  phone: "+63 917 123 4567",
+                user={authUser ?? {
+                  name: "Guest User",
+                  email: "Guest mode",
+                  phone: "—",
                 }}
-                onLogout={() => {
+                isGuest={!authUser}
+                onLogout={async () => {
+                  if (authUser) {
+                    await signOut(auth);
+                  }
                   setUserSettingsOpen(false);
                   setActiveTab("map");
                 }}
+                onLogin={() => {
+                  setUserSettingsOpen(false);
+                  setAuthPanelOpen(true);
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {authPanelOpen && (
+          <div className="app__overlay" onClick={() => setAuthPanelOpen(false)}>
+            <div className="app__overlay-panel" onClick={(event) => event.stopPropagation()}>
+              <AuthPanel
+                mode={authMode}
+                onModeChange={setAuthMode}
+                onClose={() => setAuthPanelOpen(false)}
               />
             </div>
           </div>

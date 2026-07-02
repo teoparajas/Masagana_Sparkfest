@@ -1,17 +1,22 @@
-export default function UserSettings({ user, onLogout }) {
+export default function UserSettings({ user, isGuest, onLogout, onLogin }) {
   return (
-    <section className="user-settings">
-      <div className="user-settings__topbar">
-        <button className="user-settings__tab user-settings__tab--active">USER</button>
-        <button className="user-settings__tab">PROFILE</button>
-        <button className="user-settings__tab">SECURITY</button>
-        <button className="user-settings__tab">NOTIFICATIONS</button>
-        <button className="user-settings__tab">HELP</button>
+    <section className="user-settings user-settings--guest-mode">
+      <div className="user-settings__header">
+        <div>
+          <h2 className="user-settings__title">
+            {isGuest ? "Guest access" : "Your account"}
+          </h2>
+          <p className="user-settings__subtitle">
+            {isGuest
+              ? "Use the app without signing in. No personal profile data is available." 
+              : "Signed in users get account access and saved preferences."}
+          </p>
+        </div>
       </div>
 
-      <div className="user-settings__panel">
+      <div className="user-settings__panel user-settings__panel--compact">
         <div className="user-settings__avatar-card">
-          <div className="user-settings__avatar">IMG</div>
+          <div className="user-settings__avatar">{isGuest ? "G" : "A"}</div>
         </div>
 
         <div className="user-settings__details">
@@ -20,16 +25,31 @@ export default function UserSettings({ user, onLogout }) {
             <span className="user-settings__value">{user.name}</span>
           </div>
           <div className="user-settings__detail-row">
-            <span className="user-settings__label">GMAIL INFO</span>
+            <span className="user-settings__label">EMAIL</span>
             <span className="user-settings__value">{user.email}</span>
           </div>
           <div className="user-settings__detail-row">
-            <span className="user-settings__label">CONTACT NUMBER</span>
+            <span className="user-settings__label">PHONE</span>
             <span className="user-settings__value">{user.phone}</span>
           </div>
-          <button className="user-settings__logout" type="button" onClick={onLogout}>
-            LOG OUT
-          </button>
+
+          {isGuest ? (
+            <button
+              className="user-settings__login"
+              type="button"
+              onClick={onLogin}
+            >
+              Login or create account
+            </button>
+          ) : (
+            <button
+              className="user-settings__logout"
+              type="button"
+              onClick={onLogout}
+            >
+              Log out
+            </button>
+          )}
         </div>
       </div>
     </section>

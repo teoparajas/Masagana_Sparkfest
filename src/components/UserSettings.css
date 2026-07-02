@@ -22,7 +22,7 @@
 .user-settings__subtitle {
   margin: 0;
   font-size: 13px;
-  color: #334155;
+  color: #1e3a8a;
   line-height: 1.5;
 }
 
@@ -33,7 +33,7 @@
   align-items: center;
   padding: 18px;
   background: #fff;
-  border: 1px solid #d7dbe0;
+  border: 1px solid #bfdbfe;
   border-radius: 18px;
 }
 
@@ -42,7 +42,7 @@
   justify-content: center;
   align-items: center;
   min-height: 100px;
-  background: #0f1b2c;
+  background: #1d4ed8;
   border-radius: 18px;
   padding: 10px;
 }
@@ -87,7 +87,7 @@
 .user-settings__value {
   font-size: 14px;
   font-weight: 600;
-  color: #111827;
+  color: #0f172a;
 }
 
 .user-settings__logout {

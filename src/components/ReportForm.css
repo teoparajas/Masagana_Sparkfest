@@ -26,7 +26,7 @@
 .report-form__title {
   font-size: 15px;
   font-weight: bold;
-  color: #1F3A5F;
+  color: #1d4ed8;
   margin: 0 0 4px;
 }
 
@@ -47,15 +47,15 @@
 }
 
 .report-form__feedback--success {
-  background: #e8f5e9;
-  color: #2F7D32;
-  border-left: 4px solid #2F7D32;
+  background: #dbeafe;
+  color: #0369a1;
+  border-left: 4px solid #1d4ed8;
 }
 
 .report-form__feedback--queued {
-  background: #fff8e1;
-  color: #6B5614;
-  border-left: 4px solid #C98A1F;
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-left: 4px solid #1d4ed8;
 }
 
 /* ── Form ── */
@@ -72,7 +72,7 @@
   display: block;
   font-size: 12px;
   font-weight: bold;
-  color: #444;
+  color: #1e3a8a;
   margin-bottom: 5px;
 }
 
@@ -84,21 +84,28 @@
 .report-form__textarea {
   width: 100%;
   padding: 9px 11px;
-  border: 1px solid #ccc;
+  border: 1px solid #aac8ff;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 14px;
   font-family: Arial, sans-serif;
-  color: #222;
+  color: #0f172a;
+  background: #f8fbff;
   box-sizing: border-box;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.report-form__input::placeholder,
+.report-form__select::placeholder,
+.report-form__textarea::placeholder {
+  color: #5b728a;
 }
 
 .report-form__input:focus,
 .report-form__select:focus,
 .report-form__textarea:focus {
   outline: none;
-  border-color: #1F3A5F;
-  box-shadow: 0 0 0 2px rgba(31,58,95,0.1);
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.16);
 }
 
 .report-form__input:disabled,
@@ -158,7 +165,7 @@
 .report-form__submit {
   width: 100%;
   padding: 12px;
-  background: #1F3A5F;
+  background: #1d4ed8;
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -168,7 +175,7 @@
   transition: background 0.15s;
 }
 
-.report-form__submit:hover:not(:disabled) { background: #2E7D7B; }
+.report-form__submit:hover:not(:disabled) { background: #2563eb; }
 .report-form__submit:disabled             { background: #aaa; cursor: not-allowed; }
 
 .report-form__submit--offline {

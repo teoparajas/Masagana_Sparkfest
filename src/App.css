@@ -5,7 +5,7 @@
 body {
   margin: 0;
   padding: 0;
-  background: #f0f2f5;
+  background: #eaf4ff;
   font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -13,16 +13,16 @@ body {
   max-width: 480px;
   margin: 0 auto;
   min-height: 100vh;
-  background: #f4f6f9;
+  background: #eff6ff;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid #ddd;
-  border-right: 1px solid #ddd;
+  border-left: 1px solid #dbeafe;
+  border-right: 1px solid #dbeafe;
 }
 
 /* ── Header ── */
 .app__header {
-  background: #1F3A5F;
+  background: #1d4ed8;
   color: #fff;
   padding: 14px 16px;
   display: flex;
@@ -42,7 +42,7 @@ body {
 
 .app__offline-pill {
   font-size: 11px;
-  background: #B3352C;
+  background: #2563eb;
   color: #fff;
   padding: 3px 9px;
   border-radius: 10px;
@@ -50,8 +50,8 @@ body {
 
 .app__queue-badge {
   font-size: 11px;
-  background: #C98A1F;
-  color: #fff;
+  background: #60a5fa;
+  color: #0f172a;
   padding: 3px 9px;
   border-radius: 10px;
 }
@@ -59,8 +59,8 @@ body {
 /* ── Tab nav ── */
 .app__nav {
   display: flex;
-  background: #fff;
-  border-bottom: 1px solid #ddd;
+  background: #f8fbff;
+  border-bottom: 1px solid #dbeafe;
   position: sticky;
   top: 49px;
   z-index: 40;
@@ -73,18 +73,18 @@ body {
   border: none;
   border-bottom: 3px solid transparent;
   font-size: 11px;
-  color: #666;
+  color: #1e3a8a;
   cursor: pointer;
   font-family: Arial, sans-serif;
   transition: all 0.15s;
 }
 
-.app__tab:hover { background: #f9f9f9; color: #333; }
+.app__tab:hover { background: #eef2ff; color: #1d4ed8; }
 
 .app__tab--active {
-  color: #1F3A5F;
+  color: #1d4ed8;
   font-weight: bold;
-  border-bottom-color: #1F3A5F;
+  border-bottom-color: #1d4ed8;
   background: #fff;
 }
 
@@ -98,7 +98,7 @@ body {
 .app__overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.35);
+  background: rgba(59, 130, 246, 0.18);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: grid;

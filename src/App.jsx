@@ -163,7 +163,7 @@ export default function App() {
     <div className="app">
 
       <header className="app__header">
-        <span className="app__title">FloodWatch MM</span>
+        <span className="app__title">BAHA NA!</span>
 
         {!isOnline && (
           <span className="app__offline-pill">● Offline</span>

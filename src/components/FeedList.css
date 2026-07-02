@@ -10,7 +10,7 @@
 
 /* ── Offline bar ── */
 .feed__offline-bar {
-  background: #333;
+  background: #1d4ed8;
   color: #fff;
   font-size: 11px;
   padding: 6px 14px;
@@ -28,7 +28,7 @@
 .feed__title {
   font-size: 15px;
   font-weight: bold;
-  color: #1F3A5F;
+  color: #1d4ed8;
   margin: 0;
 }
 
@@ -70,9 +70,9 @@
 .feed__filter-btn:hover { color: #333; }
 
 .feed__filter-btn--active {
-  color: #1F3A5F;
+  color: #1d4ed8;
   font-weight: bold;
-  border-bottom-color: #1F3A5F;
+  border-bottom-color: #1d4ed8;
 }
 
 /* ── Loading ── */
@@ -89,8 +89,8 @@
 .feed__spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid #ddd;
-  border-top-color: #1F3A5F;
+  border: 2px solid #bdd7ff;
+  border-top-color: #1d4ed8;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -128,10 +128,10 @@
   border-left: 4px solid transparent;
 }
 
-.feed-card:hover { background: #fafafa; }
+.feed-card:hover { background: #eef2ff; }
 
-.feed-card--verified { border-left-color: #2F7D32; }
-.feed-card--pending  { border-left-color: #C98A1F; }
+.feed-card--verified { border-left-color: #2563eb; }
+.feed-card--pending  { border-left-color: #60a5fa; }
 
 /* ── Card top row ── */
 .feed-card__top {

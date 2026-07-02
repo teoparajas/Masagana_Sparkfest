@@ -30,8 +30,8 @@
 .map-view__spinner {
   width: 18px;
   height: 18px;
-  border: 3px solid #ddd;
-  border-top-color: #1F3A5F;
+  border: 3px solid #cbd5e1;
+  border-top-color: #1d4ed8;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -53,7 +53,7 @@
 
 /* ── Offline bar ── */
 .map-view__offline-bar {
-  background: #333;
+  background: #1d4ed8;
   color: #fff;
   font-size: 11px;
   padding: 5px 12px;
@@ -79,7 +79,7 @@
 .map-view__iw-title {
   font-size: 13px;
   font-weight: bold;
-  color: #1F3A5F;
+  color: #1d4ed8;
   margin: 0 0 4px;
 }
 
@@ -106,15 +106,15 @@
   font-weight: bold;
 }
 
-.map-view__iw-badge--high     { background: #B3352C; }
-.map-view__iw-badge--moderate { background: #C98A1F; }
+.map-view__iw-badge--high     { background: #ef4444; }
+.map-view__iw-badge--moderate { background: #60a5fa; }
 
 .map-view__iw-route-btn {
   display: block;
   width: 100%;
   margin-top: 8px;
   padding: 6px 0;
-  background: #1F3A5F;
+  background: #2563eb;
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -124,7 +124,7 @@
 }
 
 .map-view__iw-route-btn:hover {
-  background: #2E7D7B;
+  background: #1d4ed8;
 }
 
 /* ── Legend ── */

@@ -108,11 +108,12 @@ export async function fetchAllReports() {
   }));
 }
 
+
 // ── Validation rule — auto-verify reports ────────────────────────────────────
 
 /**
  * Check if a newly submitted report should trigger verification.
- * Rule: 3+ reports of any type within ~500m of the same location
+ * Rule: 3+ reports within ~500m of the same location
  *       submitted in the last 2 hours → mark all matching as "verified".
  *
  * Called automatically after every submitReport().
@@ -122,39 +123,67 @@ export async function fetchAllReports() {
 export async function runValidationCheck(coords) {
   if (!coords.lat || !coords.lng) return;
 
-  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
-
-  // fetch pending reports from the last 2 hours
-  // (Firestore can't do radius queries natively —
-  //  we pull recent pending reports and filter by distance in JS)
-  const q = query(
-    collection(db, REPORTS_COLLECTION),
-    where("status",    "==",  "pending"),
-    where("createdAt", ">=",  twoHoursAgo),
-    limit(100)
-  );
-
-  const snapshot = await getDocs(q);
-  const pending  = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-
-  // filter to those within ~500m using simple lat/lng delta
-  // (0.005 degrees ≈ 500m near the equator — good enough for Metro Manila)
-  const DELTA    = 0.005;
-  const nearby   = pending.filter(
-    (r) =>
-      r.lat != null &&
-      r.lng != null &&
-      Math.abs(r.lat - coords.lat) <= DELTA &&
-      Math.abs(r.lng - coords.lng) <= DELTA
-  );
-
-  // if 3 or more nearby pending reports — verify all of them
-  if (nearby.length >= 3) {
-    const verifyPromises = nearby.map((r) =>
-      updateDoc(doc(db, REPORTS_COLLECTION, r.id), { status: "verified" })
+  try {
+    // fetch all pending reports — we filter by time and distance in JS
+    // reason: serverTimestamp() resolves async on Firestore's side, so
+    // a createdAt >= X query can miss the report that just triggered this check
+    const q = query(
+      collection(db, REPORTS_COLLECTION),
+      where("status", "==", "pending"),
+      limit(200)
     );
-    await Promise.all(verifyPromises);
-    console.log(`✅ Verified ${nearby.length} reports near [${coords.lat}, ${coords.lng}]`);
+
+    const snapshot = await getDocs(q);
+    const pending  = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+    const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
+
+    // filter by time using local JS clock
+    // (createdAt may be a Firestore Timestamp or null if still pending server write)
+    const recentPending = pending.filter((r) => {
+      if (!r.createdAt) return true; // include if timestamp not yet set
+      const ms = r.createdAt?.toMillis
+        ? r.createdAt.toMillis()           // Firestore Timestamp object
+        : new Date(r.createdAt).getTime(); // fallback if already a Date
+      return ms >= twoHoursAgo;
+    });
+
+    // filter to those within ~500m using lat/lng delta
+    // 0.005 degrees ≈ 500m near the equator — good enough for Metro Manila
+    const DELTA  = 0.005;
+    const nearby = recentPending.filter(
+      (r) =>
+        r.lat != null &&
+        r.lng != null &&
+        Math.abs(r.lat - coords.lat) <= DELTA &&
+        Math.abs(r.lng - coords.lng) <= DELTA
+    );
+
+    console.log(
+      `🔍 Validation check near [${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}]:`,
+      `${nearby.length} nearby pending report(s) found.`
+    );
+
+    // if 3 or more nearby pending reports — verify all of them
+    if (nearby.length >= 3) {
+      const verifyPromises = nearby.map((r) =>
+        updateDoc(doc(db, REPORTS_COLLECTION, r.id), { status: "verified" })
+      );
+      await Promise.all(verifyPromises);
+      console.log(
+        `✅ Auto-verified ${nearby.length} reports near`,
+        `[${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}]`
+      );
+    } else {
+      console.log(
+        `⏳ Not enough reports to verify yet`,
+        `(need 3, have ${nearby.length}).`
+      );
+    }
+
+  } catch (err) {
+    console.warn("runValidationCheck failed:", err.message);
+    // non-critical — don't throw, just log
   }
 }
 

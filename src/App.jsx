@@ -5,6 +5,7 @@ import MapView     from "./components/MapView";
 import RoutePanel  from "./components/RoutePanel";
 import ReportForm  from "./components/ReportForm";
 import FeedList    from "./components/FeedList";
+import UserSettings from "./components/UserSettings";
 import {
   getWalkingRoute,
   findNearestSafeZone,
@@ -18,6 +19,7 @@ import {
 import { useOfflineStatus } from "./hooks/useOfflineStatus";
 import safeZones from "./data/safeZones.json";
 import "./App.css";
+import "./components/UserSettings.css";
 
 const TABS = [
   { id: "map",    label: "🗺 Map"    },
@@ -36,6 +38,7 @@ export default function App() {
   const [isCalculating,     setIsCalculating]     = useState(false);
   const [directionsService, setDirectionsService] = useState(null);
   const [queueCount,        setQueueCount]        = useState(0);
+  const [userSettingsOpen,  setUserSettingsOpen]  = useState(false);
 
   // tracks previous online state so we only flush on offline → online transition
   // null = first render, not yet initialized
@@ -165,6 +168,13 @@ export default function App() {
             {tab.label}
           </button>
         ))}
+        <button
+          className={`app__tab ${userSettingsOpen ? "app__tab--active" : ""}`}
+          onClick={() => setUserSettingsOpen((open) => !open)}
+          style={{ minWidth: 94 }}
+        >
+          ⚙ User
+        </button>
       </nav>
 
       {/* tab content */}
@@ -212,6 +222,24 @@ export default function App() {
             fontSize:   "13px",
           }}>
             📊 Responder Dashboard — built in task 3.4
+          </div>
+        )}
+
+        {userSettingsOpen && (
+          <div className="app__overlay" onClick={() => setUserSettingsOpen(false)}>
+            <div className="app__overlay-panel" onClick={(event) => event.stopPropagation()}>
+              <UserSettings
+                user={{
+                  name: "Alex Mercado",
+                  email: "alex.mercado@gmail.com",
+                  phone: "+63 917 123 4567",
+                }}
+                onLogout={() => {
+                  setUserSettingsOpen(false);
+                  setActiveTab("map");
+                }}
+              />
+            </div>
           </div>
         )}
 

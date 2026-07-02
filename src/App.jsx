@@ -89,7 +89,6 @@ export default function App() {
       getQueueCount().then(setQueueCount);
 
       if (isOnline) {
-        console.log("🌐 Online on startup — flushing queued reports...");
         flushQueue().then(() => {
           getQueueCount().then(setQueueCount);
         });
@@ -101,7 +100,6 @@ export default function App() {
     wasOnlineRef.current  = isOnline;
 
     if (justReconnected) {
-      console.log("🌐 Back online — flushing queued reports...");
       flushQueue().then(() => {
         getQueueCount().then(setQueueCount);
       });

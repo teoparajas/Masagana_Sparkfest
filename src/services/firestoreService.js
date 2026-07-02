@@ -159,27 +159,16 @@ export async function runValidationCheck(coords) {
         Math.abs(r.lng - coords.lng) <= DELTA
     );
 
-    console.log(
-      `🔍 Validation check near [${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}]:`,
-      `${nearby.length} nearby pending report(s) found.`
-    );
+    
 
     // if 3 or more nearby pending reports — verify all of them
     if (nearby.length >= 3) {
       const verifyPromises = nearby.map((r) =>
         updateDoc(doc(db, REPORTS_COLLECTION, r.id), { status: "verified" })
       );
-      await Promise.all(verifyPromises);
-      console.log(
-        `✅ Auto-verified ${nearby.length} reports near`,
-        `[${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}]`
-      );
-    } else {
-      console.log(
-        `⏳ Not enough reports to verify yet`,
-        `(need 3, have ${nearby.length}).`
-      );
-    }
+      await Promise.all(verifyPromises);   
+    } 
+
 
   } catch (err) {
     console.warn("runValidationCheck failed:", err.message);

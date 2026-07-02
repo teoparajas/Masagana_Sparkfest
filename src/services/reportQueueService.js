@@ -36,7 +36,6 @@ export async function addToQueue(reportData) {
       localId,
       queuedAt: Date.now(),
     });
-    console.log("📥 Queued offline report:", localId);
   } catch (err) {
     console.warn("addToQueue failed:", err.message);
   }
@@ -53,9 +52,7 @@ async function removeFromQueue(localId) {
     // verify removal
     const stillExists = await db.reportQueue.get(localId);
     if (stillExists) {
-      console.warn("⚠️ removeFromQueue failed for:", localId);
-    } else {
-      console.log("🗑 Removed from queue:", localId);
+      console.warn("removeFromQueue failed for:", localId);
     }
   } catch (err) {
     console.warn("removeFromQueue failed:", err.message);
@@ -81,7 +78,6 @@ export async function getQueueCount() {
 export async function clearEntireQueue() {
   try {
     await db.reportQueue.clear();
-    console.log("🧹 Queue cleared.");
   } catch (err) {
     console.warn("clearEntireQueue failed:", err.message);
   }
@@ -98,7 +94,6 @@ export async function clearEntireQueue() {
  */
 export async function flushQueue() {
   if (isFlushing) {
-    console.log("⏳ Flush already in progress — skipping.");
     return 0;
   }
 
@@ -106,7 +101,6 @@ export async function flushQueue() {
   if (!queue.length) return 0;
 
   isFlushing = true;
-  console.log(`🔄 Flushing ${queue.length} queued report(s)...`);
 
   let synced = 0;
 
@@ -125,15 +119,12 @@ export async function flushQueue() {
 
       await removeFromQueue(localId);
       synced++;
-      console.log(`✅ Synced and removed: ${localId}`);
-
     } catch (err) {
-      console.warn("❌ Failed to sync queued report:", err.message);
+      console.warn("Failed to sync queued report:", err.message);
     }
   }
 
   isFlushing = false;
   const remaining = await getQueueCount();
-  console.log(`✅ Flush complete: ${synced} synced, ${remaining} remaining.`);
   return synced;
 }

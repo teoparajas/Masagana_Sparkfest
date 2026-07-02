@@ -1,0 +1,50 @@
+[
+  {
+    "id": "sz-001",
+    "name": "Amoranto Sports Complex",
+    "city": "Quezon City",
+    "lat": 14.6270,
+    "lng": 121.0075,
+    "source": "Official QC DRRMO evacuation center list (Brgy. Paligsahan / Pinagkaisahan), last updated Feb 2026"
+  },
+  {
+    "id": "sz-002",
+    "name": "Quezon Memorial Circle",
+    "city": "Quezon City",
+    "lat": 14.6510,
+    "lng": 121.0490,
+    "source": "Official QC DRRMO evacuation center list (Brgy. Central), last updated Feb 2026"
+  },
+  {
+    "id": "sz-003",
+    "name": "Bagong Silangan Elementary School",
+    "city": "Quezon City",
+    "lat": 14.7040,
+    "lng": 121.1140,
+    "source": "Official QC DRRMO evacuation center list (Brgy. Bagong Silangan), last updated Feb 2026"
+  },
+  {
+    "id": "sz-004",
+    "name": "Batasan National High School",
+    "city": "Quezon City",
+    "lat": 14.6950,
+    "lng": 121.0850,
+    "source": "Official QC DRRMO evacuation center list (Brgy. Batasan Hills), last updated Feb 2026"
+  },
+  {
+    "id": "sz-005",
+    "name": "Marikina Sports Center",
+    "city": "Marikina",
+    "lat": 14.6335,
+    "lng": 121.1005,
+    "source": "Widely documented as a primary Marikina evacuation site during major flood events (Ondoy, Ulysses) - verify current active status against Marikina City's own designated list, as facilities rotate"
+  },
+  {
+    "id": "sz-006",
+    "name": "Rizal Memorial Sports Complex",
+    "city": "Manila",
+    "lat": 14.5645,
+    "lng": 120.9945,
+    "source": "Known large public facility used for shelter/relief operations in Manila - verify current designation with Manila DRRMO"
+  }
+]

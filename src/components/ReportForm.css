@@ -1,0 +1,187 @@
+/* src/components/ReportForm.css */
+
+.report-form {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  font-family: Arial, sans-serif;
+}
+
+/* ── Offline banner ── */
+.report-form__offline-banner {
+  background: #333;
+  color: #fff;
+  font-size: 12px;
+  padding: 8px 16px;
+  line-height: 1.5;
+}
+
+/* ── Header ── */
+.report-form__header {
+  padding: 14px 16px 0;
+}
+
+.report-form__title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #1d4ed8;
+  margin: 0 0 4px;
+}
+
+.report-form__subtitle {
+  font-size: 11px;
+  color: #888;
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+/* ── Feedback states ── */
+.report-form__feedback {
+  margin: 0 16px 12px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.report-form__feedback--success {
+  background: #dbeafe;
+  color: #0369a1;
+  border-left: 4px solid #1d4ed8;
+}
+
+.report-form__feedback--queued {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-left: 4px solid #1d4ed8;
+}
+
+/* ── Form ── */
+.report-form__form {
+  padding: 0 16px 16px;
+}
+
+/* ── Fields ── */
+.report-form__field {
+  margin-bottom: 14px;
+}
+
+.report-form__label {
+  display: block;
+  font-size: 12px;
+  font-weight: bold;
+  color: #1e3a8a;
+  margin-bottom: 5px;
+}
+
+.report-form__required { color: #B3352C; margin-left: 2px; }
+.report-form__optional { color: #aaa; font-weight: normal; font-size: 11px; }
+
+.report-form__input,
+.report-form__select,
+.report-form__textarea {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid #aac8ff;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+  color: #0f172a;
+  background: #f8fbff;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.report-form__input::placeholder,
+.report-form__select::placeholder,
+.report-form__textarea::placeholder {
+  color: #5b728a;
+}
+
+.report-form__input:focus,
+.report-form__select:focus,
+.report-form__textarea:focus {
+  outline: none;
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.16);
+}
+
+.report-form__input:disabled,
+.report-form__select:disabled,
+.report-form__textarea:disabled {
+  background: #f9f9f9;
+  color: #aaa;
+}
+
+.report-form__textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.report-form__charcount {
+  display: block;
+  text-align: right;
+  font-size: 10px;
+  color: #bbb;
+  margin-top: 3px;
+}
+
+/* ── GPS hint button ── */
+.report-form__gps-hint {
+  background: none;
+  border: none;
+  color: #2E7D7B;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 3px 0;
+  text-decoration: underline;
+}
+
+/* ── Photo placeholder ── */
+.report-form__photo-placeholder {
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  padding: 14px;
+  text-align: center;
+  color: #aaa;
+  font-size: 12px;
+  background: #fafafa;
+}
+
+/* ── Error ── */
+.report-form__error {
+  background: #ffebee;
+  border-left: 4px solid #B3352C;
+  color: #B3352C;
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+/* ── Submit button ── */
+.report-form__submit {
+  width: 100%;
+  padding: 12px;
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.report-form__submit:hover:not(:disabled) { background: #2563eb; }
+.report-form__submit:disabled             { background: #aaa; cursor: not-allowed; }
+
+.report-form__submit--offline {
+  background: #C98A1F;
+}
+
+.report-form__submit--offline:hover:not(:disabled) {
+  background: #a87018;
+}

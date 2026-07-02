@@ -1,0 +1,168 @@
+/* src/components/MapView.css */
+
+.map-view {
+  width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+  margin-bottom: 12px;
+  background: #e8e8e8;
+}
+
+/* ── Map container — fixed height ── */
+.map-view__container {
+  width: 100%;
+  height: 380px;
+}
+
+/* ── Loading state ── */
+.map-view--loading {
+  height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #666;
+  font-size: 13px;
+  font-family: Arial, sans-serif;
+}
+
+.map-view__spinner {
+  width: 18px;
+  height: 18px;
+  border: 3px solid #cbd5e1;
+  border-top-color: #1d4ed8;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Error state ── */
+.map-view--error {
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #B3352C;
+  font-size: 13px;
+  font-family: Arial, sans-serif;
+}
+
+/* ── Offline bar ── */
+.map-view__offline-bar {
+  background: #1d4ed8;
+  color: #fff;
+  font-size: 11px;
+  padding: 5px 12px;
+  font-family: Arial, sans-serif;
+}
+
+/* Stale Route Bar */
+.map-view__stale-route-bar {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 6px 12px;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ── InfoWindow content ── */
+.map-view__infowindow {
+  font-family: Arial, sans-serif;
+  max-width: 200px;
+  padding: 2px 0;
+}
+
+.map-view__iw-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: #1d4ed8;
+  margin: 0 0 4px;
+}
+
+.map-view__iw-city {
+  font-size: 11px;
+  color: #888;
+  margin: 0 0 4px;
+}
+
+.map-view__iw-detail {
+  font-size: 12px;
+  color: #333;
+  margin: 2px 0;
+  line-height: 1.4;
+}
+
+.map-view__iw-badge {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: bold;
+}
+
+.map-view__iw-badge--high     { background: #ef4444; }
+.map-view__iw-badge--moderate { background: #60a5fa; }
+
+.map-view__iw-route-btn {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 0;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.map-view__iw-route-btn:hover {
+  background: #1d4ed8;
+}
+
+/* ── Legend ── */
+.map-view__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #fafafa;
+  border-top: 1px solid #eee;
+}
+
+.map-view__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #555;
+  font-family: Arial, sans-serif;
+}
+
+.map-view__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+
+.map-view__dot--route {
+  background: #2B6FD1;
+  border-radius: 2px; 
+  width: 14px;
+  height: 4px;
+  margin-bottom: 2px;
+}
+
+.map-view__dot--user       { background: #2B6FD1; }
+.map-view__dot--flood-high { background: #B3352C; }
+.map-view__dot--flood-mod  { background: #C98A1F; }
+.map-view__dot--safe       { background: #2F7D32; }

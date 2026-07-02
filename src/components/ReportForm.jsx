@@ -3,13 +3,12 @@
 // Online: submits directly to Firestore via firestoreService.
 // Offline: saves to local queue via reportQueueService, syncs on reconnect.
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { submitReport, runValidationCheck } from "../services/firestoreService";
 import { addToQueue }                       from "../services/reportQueueService";
 import { useOfflineStatus }                 from "../hooks/useOfflineStatus";
 import "./ReportForm.css";
 
-// report type options — kept intentionally short for quick selection
 const REPORT_TYPES = [
   "Rising floodwater",
   "Impassable road",
@@ -19,12 +18,11 @@ const REPORT_TYPES = [
   "Other",
 ];
 
-// submission result states
 const STATUS = {
   IDLE:    "idle",
   LOADING: "loading",
   SUCCESS: "success",
-  QUEUED:  "queued",   // submitted while offline
+  QUEUED:  "queued",
   ERROR:   "error",
 };
 
@@ -36,6 +34,19 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
   const [description, setDescription] = useState("");
   const [status,      setStatus]      = useState(STATUS.IDLE);
   const [errorMsg,    setErrorMsg]    = useState("");
+
+  // ref to track success reset timer so we can cancel on unmount
+  const successTimerRef = useRef(null);
+
+  // clear any pending timers when component unmounts (e.g. user switches tab)
+  // prevents stale state updates on unmounted components
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current);
+      }
+    };
+  }, []);
 
   // ── Validation ─────────────────────────────────────────────────────────────
   function validate() {
@@ -65,6 +76,9 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
 
     if (!validate()) return;
 
+    // prevent double-submit
+    if (status === STATUS.LOADING) return;
+
     const reportData = {
       location:    location.trim(),
       type,
@@ -88,10 +102,11 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
     try {
       await submitReport(reportData);
 
-      // run validation check after every submission
-      // if 3+ nearby reports exist, they all flip to "verified" automatically
       if (reportData.lat && reportData.lng) {
-        await runValidationCheck({ lat: reportData.lat, lng: reportData.lng });
+        await runValidationCheck({
+          lat: reportData.lat,
+          lng: reportData.lng,
+        });
       }
 
       setStatus(STATUS.SUCCESS);
@@ -99,15 +114,19 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
       if (onReportSubmitted) onReportSubmitted({ ...reportData, status: "pending" });
 
       // reset success message after 4 seconds
-      setTimeout(() => setStatus(STATUS.IDLE), 4000);
+      // stored in ref so it can be cancelled if component unmounts
+      successTimerRef.current = setTimeout(() => {
+        setStatus(STATUS.IDLE);
+      }, 4000);
 
     } catch (err) {
       console.error("Report submission failed:", err);
 
-      // if the online submit fails, save to queue as fallback
+      // online submit failed — save to queue as fallback
       addToQueue(reportData);
       setStatus(STATUS.QUEUED);
       resetFormFields();
+      if (onReportSubmitted) onReportSubmitted({ ...reportData, status: "pending" });
     }
   }
 
@@ -137,7 +156,7 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
         </p>
       </div>
 
-      {/* ── Success state ── */}
+      {/* success feedback */}
       {status === STATUS.SUCCESS && (
         <div className="report-form__feedback report-form__feedback--success">
           ✅ Report submitted — it appears in the Community Feed as{" "}
@@ -145,7 +164,7 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
         </div>
       )}
 
-      {/* ── Queued (offline) state ── */}
+      {/* queued (offline) feedback */}
       {status === STATUS.QUEUED && (
         <div className="report-form__feedback report-form__feedback--queued">
           💾 Saved locally — will send automatically when you're back online.
@@ -169,7 +188,6 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
             disabled={status === STATUS.LOADING}
             maxLength={120}
           />
-          {/* auto-fill from GPS if available */}
           {userLocation && !location && (
             <button
               type="button"
@@ -188,7 +206,8 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
         {/* Report type */}
         <div className="report-form__field">
           <label className="report-form__label" htmlFor="rep-type">
-            What are you seeing? <span className="report-form__required">*</span>
+            What are you seeing?{" "}
+            <span className="report-form__required">*</span>
           </label>
           <select
             id="rep-type"
@@ -226,7 +245,10 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
         {/* Photo placeholder */}
         <div className="report-form__field">
           <label className="report-form__label">
-            Photo <span className="report-form__optional">(optional — coming soon)</span>
+            Photo{" "}
+            <span className="report-form__optional">
+              (optional — coming soon)
+            </span>
           </label>
           <div className="report-form__photo-placeholder">
             📷 Photo upload — future feature
@@ -235,15 +257,15 @@ export default function ReportForm({ userLocation, onReportSubmitted }) {
 
         {/* Validation error */}
         {errorMsg && (
-          <div className="report-form__error">
-            ⚠️ {errorMsg}
-          </div>
+          <div className="report-form__error">⚠️ {errorMsg}</div>
         )}
 
         {/* Submit button */}
         <button
           type="submit"
-          className={`report-form__submit ${!isOnline ? "report-form__submit--offline" : ""}`}
+          className={`report-form__submit ${
+            !isOnline ? "report-form__submit--offline" : ""
+          }`}
           disabled={status === STATUS.LOADING}
         >
           {status === STATUS.LOADING

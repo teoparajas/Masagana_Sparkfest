@@ -17,6 +17,8 @@ import {
   getQueueCount,
 } from "./services/reportQueueService";
 import { useOfflineStatus } from "./hooks/useOfflineStatus";
+import { auth } from "./services/firebaseConfig";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import safeZones from "./data/safeZones.json";
 import "./App.css";
 import "./components/UserSettings.css";
@@ -39,6 +41,7 @@ export default function App() {
   const [directionsService, setDirectionsService] = useState(null);
   const [queueCount,        setQueueCount]        = useState(0);
   const [userSettingsOpen,  setUserSettingsOpen]  = useState(false);
+  const [authUser,          setAuthUser]          = useState(null);
 
   // null = first render, not yet initialized
   const wasOnlineRef = useRef(null);
@@ -57,6 +60,18 @@ export default function App() {
       () => setUserLocation({ lat: 14.5995, lng: 120.9842 }),
       { timeout: 8000, maximumAge: 60000 }
     );
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setAuthUser(user ? {
+        uid: user.uid,
+        displayName: user.displayName || "",
+        email: user.email || "",
+      } : null);
+    });
+
+    return unsubscribe;
   }, []);
 
   // ── Offline queue flush — only on offline → online transition ─────────────
@@ -227,12 +242,15 @@ export default function App() {
           <div className="app__overlay" onClick={() => setUserSettingsOpen(false)}>
             <div className="app__overlay-panel" onClick={(event) => event.stopPropagation()}>
               <UserSettings
-                user={{
-                  name: "Alex Mercado",
-                  email: "alex.mercado@gmail.com",
-                  phone: "+63 917 123 4567",
+                user={authUser}
+                onLogout={async () => {
+                  if (authUser) {
+                    await signOut(auth);
+                  }
+                  setUserSettingsOpen(false);
+                  setActiveTab("map");
                 }}
-                onLogout={() => {
+                onClose={() => {
                   setUserSettingsOpen(false);
                   setActiveTab("map");
                 }}
